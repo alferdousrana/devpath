@@ -1,0 +1,296 @@
+{
+ "id": "docker",
+ "trackId": "backend",
+ "title": "Docker & Docker Compose",
+ "tagline": "Package services once, run them identically everywhere.",
+ "overview": "Containers are how backend services are built, shipped and run today. This module explains what images and containers really are, how to write efficient Dockerfiles, how data and networking work, and how to run a complete Django + PostgreSQL + Redis stack with Compose.",
+ "objectives": [
+  "Explain images, layers, containers, and how containers differ from VMs.",
+  "Write a cache-efficient, non-root Dockerfile for a Python service.",
+  "Persist data with volumes and connect containers with networks.",
+  "Configure containers with environment variables.",
+  "Run and debug a multi-service stack with Docker Compose."
+ ],
+ "concepts": [
+  [
+   "Image",
+   "Layered read-only template."
+  ],
+  [
+   "Container",
+   "Isolated process from an image."
+  ],
+  [
+   "Dockerfile",
+   "Build recipe."
+  ],
+  [
+   "Volume",
+   "Persistent storage."
+  ],
+  [
+   "Network",
+   "Name-resolving connectivity between containers."
+  ],
+  [
+   "Compose",
+   "Multi-container app definition."
+  ]
+ ],
+ "notes": [
+  "`docker compose logs -f service` is your first debugging step.",
+  "Never put secrets into images; pass them at runtime.",
+  "Pin image tags (`postgres:16`), not `latest`."
+ ],
+ "checkpoints": {
+  "explain": [
+   "Image vs container vs VM",
+   "Layer caching",
+   "Why localhost fails between containers"
+  ],
+  "use": [
+   "Build/run with port mapping",
+   "Named volumes",
+   "Compose with healthchecks"
+  ],
+  "debug": [
+   "Connection refused to db",
+   "Slow rebuilds",
+   "Port published but unreachable"
+  ],
+  "build": [
+   "Containerize your Django API with Postgres and Redis"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Containerize the Orders API",
+   "goal": "Ship the DRF project from the Django module.",
+   "steps": [
+    "Write a Dockerfile and .dockerignore.",
+    "Write compose.yaml with web, db (volume + healthcheck) and redis.",
+    "Run migrations with `docker compose exec web python manage.py migrate`.",
+    "Prove data survives `docker compose down` + `up`, and is deleted by `down -v`."
+   ]
+  },
+  {
+   "title": "Image diet",
+   "goal": "Measure and shrink an image.",
+   "steps": [
+    "Build with `python:3.12` and note `docker images` size.",
+    "Switch to `-slim`, add .dockerignore, rebuild and compare.",
+    "Try a multi-stage build that installs build tools only in the first stage."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "Containers and images",
+   "minutes": 14,
+   "summary": "What containers are, how they differ from VMs, and the image/container relationship.",
+   "simple": "A **container** is an isolated process that runs with its own filesystem, network and limits, but shares the host's kernel. An **image** is the read-only template a container is started from. Docker builds images and runs containers.",
+   "technical": "**Image**: a stack of read-only **layers** (each from a Dockerfile instruction) plus metadata (default command, env, exposed ports). Images are identified by `name:tag` (`python:3.12-slim`) and content digests. They come from registries like Docker Hub or GHCR.\n\n**Container**: a running (or stopped) instance of an image, with a thin writable layer on top. Delete the container and that writable layer is gone — which is why data needs volumes.\n\n**Containers vs VMs**: a VM virtualizes hardware and boots a full guest OS (heavy, minutes, GBs). A container uses Linux kernel features — **namespaces** (isolated view of processes, network, mounts) and **cgroups** (CPU/memory limits) — to isolate a process. It starts in milliseconds and the image can be tens of MB. On macOS/Windows, Docker runs a small Linux VM to provide the kernel.\n\nWhy backend engineers care: the same image runs on your laptop, CI and production, ending \"works on my machine\". Dependencies (Python version, system libs) are baked in.\n\nCommands: `docker pull`, `docker images`, `docker run`, `docker ps -a`, `docker logs`, `docker exec -it <c> sh`, `docker stop`, `docker rm`, `docker rmi`.",
+   "analogy": "An image is a class; a container is an object instantiated from it. Or: an image is a frozen meal in its package, a container is that meal heated and on a plate. You can heat many from the same package.",
+   "example": {
+    "lang": "bash",
+    "code": "$ docker pull python:3.12-slim\n$ docker run --rm python:3.12-slim python -c \"import sys; print(sys.version)\"\n3.12.3 (main, ...) [GCC 12.2.0]\n$ docker run -d --name web -p 8080:80 nginx:1.27\n$ docker ps\nCONTAINER ID  IMAGE       STATUS        PORTS                  NAMES\n3b1f...       nginx:1.27  Up 5 seconds  0.0.0.0:8080->80/tcp   web\n$ docker logs web --tail 5\n$ docker exec -it web sh       # shell inside the running container\n$ docker stop web && docker rm web",
+    "explain": "`--rm` deletes the container when it exits. `-d` runs detached. `exec` is how you look inside a running container."
+   },
+   "terms": [
+    [
+     "Image",
+     "Read-only layered template for containers."
+    ],
+    [
+     "Container",
+     "Running instance of an image with a writable layer."
+    ],
+    [
+     "Layer",
+     "Filesystem diff created by one build step; cached and shared."
+    ],
+    [
+     "Namespaces / cgroups",
+     "Kernel isolation and resource limits."
+    ],
+    [
+     "Registry",
+     "Server storing images, e.g. Docker Hub."
+    ]
+   ],
+   "remember": [
+    "Image = template, container = running instance.",
+    "Containers share the host kernel; VMs don't.",
+    "Container filesystem changes vanish on removal."
+   ],
+   "mistakes": [
+    "Storing database data inside the container's writable layer.",
+    "Using `:latest` tags in production (unpredictable).",
+    "Treating a container like a VM you SSH into and patch."
+   ],
+   "interview": [
+    "How is a container different from a virtual machine?",
+    "What happens to files written inside a container when it's removed?"
+   ],
+   "practice": [
+    "Can you use: run an nginx container, view its logs, open a shell in it?",
+    "Can you explain: why containers start so much faster than VMs."
+   ],
+   "id": "docker-images-containers"
+  },
+  {
+   "title": "Dockerfile, build, run and ports",
+   "minutes": 16,
+   "summary": "Write a Dockerfile for a Python service, build it efficiently and publish ports.",
+   "simple": "A **Dockerfile** is the recipe for an image. `docker build` turns it into an image; `docker run -p` starts a container and maps a host port to the container's port.",
+   "technical": "Key instructions:\n- `FROM python:3.12-slim` base image. `WORKDIR /app` sets the working directory.\n- `COPY` files into the image; `RUN` executes a command at build time (install packages).\n- `ENV` sets environment variables; `ARG` sets build-time-only variables.\n- `EXPOSE 8000` documents the port (doesn't publish it).\n- `CMD` is the default command (overridable); `ENTRYPOINT` is the fixed executable. Use exec form `CMD [\"gunicorn\", \"...\"]` so signals reach your process.\n- `USER app` to avoid running as root.\n\n**Layer caching**: each instruction is a cached layer; when a layer changes, all later layers rebuild. So copy `requirements.txt` and install dependencies **before** copying source code — editing code then doesn't reinstall packages. Add a `.dockerignore` (`.git`, `.venv`, `__pycache__`, `.env`) to keep the build context small and secrets out.\n\n**Multi-stage builds** compile in one stage and copy only the results into a slim final stage.\n\n**Ports**: `-p 8000:8000` maps host:container. Inside the container, the server must bind to `0.0.0.0`, not `127.0.0.1` — loopback inside a container is unreachable from outside it.",
+   "analogy": "A Dockerfile is a recipe card read top to bottom. Layer caching is a cook who keeps the prepared stock from yesterday; change step 2 and everything after step 2 has to be redone.",
+   "example": {
+    "lang": "dockerfile",
+    "code": "# Dockerfile\nFROM python:3.12-slim\nENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1\nWORKDIR /app\n\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt   # cached unless requirements change\n\nCOPY . .\nRUN useradd --create-home app && chown -R app /app\nUSER app\n\nEXPOSE 8000\nCMD [\"gunicorn\", \"config.wsgi:application\", \"--bind\", \"0.0.0.0:8000\", \"--workers\", \"3\"]\n\n# build and run:\n# docker build -t shop-api:1.0 .\n# docker run --rm -p 8000:8000 --env-file .env shop-api:1.0",
+    "explain": "Dependencies install before code is copied, so code edits rebuild in seconds. The app runs as a non-root user and binds to 0.0.0.0 so the published port works."
+   },
+   "terms": [
+    [
+     "FROM / RUN / COPY / CMD",
+     "Base image, build step, add files, default command."
+    ],
+    [
+     "Build context",
+     "Files sent to the builder; trimmed by .dockerignore."
+    ],
+    [
+     "Layer cache",
+     "Reuse of unchanged build steps."
+    ],
+    [
+     "Multi-stage build",
+     "Several FROM stages; copy only what's needed into the final one."
+    ],
+    [
+     "-p host:container",
+     "Publish a container port on the host."
+    ]
+   ],
+   "remember": [
+    "Dependencies first, source code last.",
+    "Bind to 0.0.0.0 inside containers.",
+    "Run as non-root; add .dockerignore."
+   ],
+   "mistakes": [
+    "`COPY . .` before `pip install`, so every code edit reinstalls everything.",
+    "Server listening on 127.0.0.1 → 'connection refused' from host.",
+    "Baking `.env` secrets into the image."
+   ],
+   "interview": [
+    "Why order Dockerfile instructions carefully?",
+    "Difference between CMD and ENTRYPOINT?"
+   ],
+   "practice": [
+    "Can you build: a Dockerfile for a Django app that rebuilds in seconds after code changes?",
+    "Can you debug: container runs but `curl localhost:8000` is refused."
+   ],
+   "id": "docker-dockerfile"
+  },
+  {
+   "title": "Volumes, networks and environment variables",
+   "minutes": 15,
+   "summary": "Persist data, let containers talk to each other, and configure them from outside.",
+   "simple": "**Volumes** keep data outside the container's lifecycle. **Networks** let containers reach each other by name. **Environment variables** configure a container without rebuilding the image.",
+   "technical": "Storage:\n- **Named volume** `-v pgdata:/var/lib/postgresql/data`: managed by Docker, survives container removal. Use for databases.\n- **Bind mount** `-v $(pwd):/app`: maps a host directory; great in development for live code reload.\n- `tmpfs`: in-memory, for scratch data.\n\nNetworks:\n- The default bridge network gives containers IPs but **no name resolution**.\n- On a **user-defined bridge network** (`docker network create appnet`), containers resolve each other **by container/service name** through Docker's embedded DNS: the app connects to `postgres:5432`, not `localhost`.\n- Inside a container, `localhost` is the container itself. That's the #1 networking confusion.\n- Port publishing (`-p`) is only needed for access from the host or outside; container-to-container traffic on the same network doesn't need it.\n\nEnvironment variables: `-e DEBUG=0`, `--env-file .env`. The same image runs in dev, staging and prod with different config (12-factor app). Secrets passed as env vars are visible via `docker inspect`; production systems often use secret managers or Docker/Kubernetes secrets mounted as files.",
+   "analogy": "A volume is a storage unit you rent separately from your apartment: move out (remove the container) and your boxes are still there. A user-defined network is an office intranet where you can call colleagues by name instead of by phone number.",
+   "example": {
+    "lang": "bash",
+    "code": "$ docker network create appnet\n$ docker volume create pgdata\n$ docker run -d --name db --network appnet \\\n    -e POSTGRES_PASSWORD=dev -v pgdata:/var/lib/postgresql/data postgres:16\n$ docker run --rm --network appnet postgres:16 \\\n    psql \"postgresql://postgres:dev@db:5432/postgres\" -c \"select 1\"\n ?column?\n----------\n        1\n$ docker rm -f db && docker run -d --name db --network appnet \\\n    -e POSTGRES_PASSWORD=dev -v pgdata:/var/lib/postgresql/data postgres:16\n# data is still there: it lives in the volume",
+    "explain": "The client reached the database by the name `db` over the shared network, without publishing any port. Recreating the container kept the data."
+   },
+   "terms": [
+    [
+     "Named volume",
+     "Docker-managed persistent storage."
+    ],
+    [
+     "Bind mount",
+     "Host directory mounted into a container."
+    ],
+    [
+     "User-defined network",
+     "Bridge network with DNS by container name."
+    ],
+    [
+     "12-factor config",
+     "Configuration in the environment, not the code."
+    ]
+   ],
+   "remember": [
+    "Databases need named volumes.",
+    "Containers on one network talk by name; `localhost` means 'this container'.",
+    "Same image, different env per environment."
+   ],
+   "mistakes": [
+    "App config `DB_HOST=localhost` inside a container.",
+    "Publishing database ports to the internet.",
+    "`docker volume prune` without checking what it deletes."
+   ],
+   "interview": [
+    "Volume vs bind mount: when to use each?",
+    "Why can't the Django container reach Postgres at localhost?"
+   ],
+   "practice": [
+    "Can you build: app + database containers on a custom network with a persistent volume?",
+    "Can you debug: `could not connect to server: Connection refused` from app to db."
+   ],
+   "id": "docker-volumes-networks"
+  },
+  {
+   "title": "Docker Compose: Django + PostgreSQL + Redis",
+   "minutes": 16,
+   "summary": "Define a multi-container application in one file and run it with one command.",
+   "simple": "**Docker Compose** describes several containers (services), their networks, volumes and environment in a `compose.yaml` file. `docker compose up` starts the whole stack.",
+   "technical": "Compose creates a dedicated network for the project automatically, so every service reaches others **by service name** (`db`, `redis`).\n\nImportant keys:\n- `build: .` or `image: postgres:16`\n- `ports: [\"8000:8000\"]` (only for services you need from the host)\n- `environment:` / `env_file: .env`\n- `volumes:` named volumes for data, bind mounts for dev code\n- `depends_on:` with `condition: service_healthy` + a `healthcheck` — plain `depends_on` only waits for the container to **start**, not for Postgres to be ready to accept connections.\n- `command:` override the image's CMD\n\nCommands: `docker compose up -d --build`, `docker compose ps`, `docker compose logs -f web`, `docker compose exec web python manage.py migrate`, `docker compose down` (keeps volumes) vs `docker compose down -v` (deletes volumes = deletes your DB data).\n\nTypical stack: `web` (Django/gunicorn), `db` (PostgreSQL), `redis` (cache, Celery broker, DRF throttling store), `worker` (Celery, same image, different command).",
+   "analogy": "Compose is a band's stage plan: who plays (services), where they plug in (ports), what they read from (env), who must be tuned before the show starts (healthchecks), and one cue to start them all.",
+   "example": {
+    "lang": "yaml",
+    "code": "# compose.yaml\nservices:\n  web:\n    build: .\n    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000\n    ports: [\"8000:8000\"]\n    env_file: .env\n    environment:\n      POSTGRES_HOST: db\n      REDIS_URL: redis://redis:6379/0\n    depends_on:\n      db: { condition: service_healthy }\n      redis: { condition: service_started }\n\n  db:\n    image: postgres:16\n    env_file: .env            # POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD\n    volumes: [pgdata:/var/lib/postgresql/data]\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}\"]\n      interval: 5s\n      retries: 10\n\n  redis:\n    image: redis:7-alpine\n\nvolumes:\n  pgdata:",
+    "explain": "Django finds Postgres at host `db` and Redis at `redis://redis:6379`. Only web publishes a port. The healthcheck makes web wait until Postgres accepts connections."
+   },
+   "terms": [
+    [
+     "Service",
+     "One container definition in Compose."
+    ],
+    [
+     "depends_on + healthcheck",
+     "Start order that waits for readiness."
+    ],
+    [
+     "docker compose down -v",
+     "Stops the stack and deletes named volumes."
+    ],
+    [
+     "Project network",
+     "Network Compose creates so services resolve each other by name."
+    ]
+   ],
+   "remember": [
+    "Services talk by service name on the Compose network.",
+    "`depends_on` alone doesn't wait for readiness.",
+    "`down -v` deletes your database volume."
+   ],
+   "mistakes": [
+    "`POSTGRES_HOST=localhost` in the web service.",
+    "Running migrations in the image build instead of at deploy/startup.",
+    "Exposing db and redis ports publicly in production."
+   ],
+   "interview": [
+    "What does Compose do with networking for you?",
+    "Why add a healthcheck to the db service?"
+   ],
+   "practice": [
+    "Can you build: Django + Postgres + Redis + Celery worker with Compose?",
+    "Can you debug: web crashes on startup because the DB isn't ready yet."
+   ],
+   "id": "docker-compose"
+  }
+ ]
+}

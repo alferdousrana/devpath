@@ -1,0 +1,105 @@
+rules_version = '2';
+// ---------------------------------------------------------------------------
+// DevPath Firestore Security Rules
+//  - A user can only read/write their own users/{uid} tree.
+//  - Attempts (quiz/exam/logic) and achievements are append-only: once
+//    written they can't be edited or deleted, so history can't be rewritten.
+//  - Exam attempts are shape-checked. Scores are NOT stored as trusted values:
+//    the app re-grades every attempt against the answer key when it reads it.
+//  - Lesson completion is monotonic (can't be un-completed).
+//  - Public course content (optional /content tree) is read-only.
+// ---------------------------------------------------------------------------
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function data() { return request.resource.data; }
+    function baseValid(docId) {
+      return data().id == docId
+        && data().updatedAt is number
+        && data().updatedAt <= request.time.toMillis() + 600000;   // allow 10 min clock skew
+    }
+    function shortStr(f, n) { return !(f in data()) || data()[f] == null || (data()[f] is string && data()[f].size() <= n); }
+
+    match /users/{uid} {
+      // profile document
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && baseValid("main")
+        && shortStr("displayName", 60) && shortStr("name", 60)
+        && (!("goals" in data()) || data().goals is map);
+      allow delete: if false;
+
+      // ---- append-only records ----
+      match /quizAttempts/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && baseValid(id)
+          && data().answers is list && data().answers.size() <= 100
+          && data().createdAt is number && shortStr("label", 120);
+        allow update, delete: if false;
+      }
+      match /logicAttempts/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && baseValid(id)
+          && data().answers is list && data().answers.size() <= 50 && data().createdAt is number;
+        allow update, delete: if false;
+      }
+      match /examAttempts/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && baseValid(id)
+          && data().answers is list
+          && data().answers.size() >= 1 && data().answers.size() <= 120
+          && data().total == data().answers.size()
+          && data().passPercent is number && data().passPercent >= 0 && data().passPercent <= 100
+          && data().durationSec is number && data().durationSec >= 0
+          && data().timeLimitSec is number && data().durationSec <= data().timeLimitSec + 120
+          && data().examId is string && data().examId.size() <= 80
+          && data().createdAt is number;
+        allow update, delete: if false;
+      }
+      match /achievements/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && baseValid(id) && data().unlockedAt is number;
+        allow update, delete: if false;
+      }
+
+      // ---- mergeable records ----
+      match /lessons/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && baseValid(id) && data().completed is bool;
+        allow update: if isOwner(uid) && baseValid(id) && data().completed is bool
+          && !(resource.data.completed == true && data().completed != true);
+        allow delete: if false;
+      }
+      match /notes/{id} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && baseValid(id) && data().text is string && data().text.size() <= 20000;
+        allow delete: if isOwner(uid);
+      }
+      match /coding/{id} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && baseValid(id) && shortStr("draft", 50000)
+          && data().status in ["attempted", "solved"];
+        allow delete: if isOwner(uid);
+      }
+      match /{col}/{id} {
+        // bookmarks, wrongAnswers, sessions
+        allow read: if isOwner(uid) && col in ["bookmarks", "wrongAnswers", "sessions"];
+        allow create, update: if isOwner(uid) && col in ["bookmarks", "wrongAnswers", "sessions"] && baseValid(id);
+        allow delete: if isOwner(uid) && col in ["bookmarks", "wrongAnswers", "sessions"];
+      }
+    }
+
+    // Optional: course content mirrored into Firestore (read-only to clients;
+    // write it with the Admin SDK or the console).
+    match /content/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Deny everything else.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

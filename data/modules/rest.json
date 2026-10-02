@@ -1,0 +1,294 @@
+{
+ "id": "rest",
+ "trackId": "backend",
+ "title": "REST API",
+ "tagline": "Design APIs that are predictable, safe to retry, secure and evolvable.",
+ "overview": "You've built endpoints in Django; this module is about designing them well, independent of framework. Good API design is mostly consistency: resource-oriented URLs, correct methods and status codes, idempotency for safe retries, predictable pagination and errors, and a versioning strategy that never surprises clients.",
+ "objectives": [
+  "Explain REST constraints and design resource-oriented endpoints.",
+  "Map CRUD to methods and choose correct status codes.",
+  "Explain and implement idempotency.",
+  "Design pagination, filtering and versioning.",
+  "Choose authentication schemes, prevent BOLA, and standardize errors."
+ ],
+ "concepts": [
+  [
+   "Resource",
+   "Thing addressed by a URL."
+  ],
+  [
+   "Idempotency",
+   "Same effect when repeated."
+  ],
+  [
+   "Status code",
+   "Machine-readable outcome."
+  ],
+  [
+   "Cursor",
+   "Opaque pointer to the next page."
+  ],
+  [
+   "BOLA",
+   "Missing per-object authorization."
+  ]
+ ],
+ "notes": [
+  "Design the API contract before writing code (OpenAPI).",
+  "Consistency beats cleverness.",
+  "Assume every client will retry on timeouts."
+ ],
+ "checkpoints": {
+  "explain": [
+   "Idempotency and why retries happen",
+   "401 vs 403 vs 404",
+   "Offset vs cursor pagination"
+  ],
+  "use": [
+   "Design an endpoint map",
+   "Problem Details errors",
+   "Idempotency keys"
+  ],
+  "debug": [
+   "Double charges after timeouts",
+   "Broken clients after a field rename",
+   "BOLA reports"
+  ],
+  "build": [
+   "An OpenAPI spec for a small service, then implement it in DRF"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Design first",
+   "goal": "Write an API contract before code.",
+   "steps": [
+    "Pick a domain (library, gym, ticketing).",
+    "List resources and endpoints with methods.",
+    "Write status codes for each success and failure.",
+    "Describe pagination, filtering and the error format.",
+    "Write it as an OpenAPI YAML file and view it in Swagger Editor."
+   ]
+  },
+  {
+   "title": "Retry-safe payments",
+   "goal": "Implement Idempotency-Key handling.",
+   "steps": [
+    "Create a model storing key, request hash and response.",
+    "On POST, return the stored response if the key exists.",
+    "Reject the same key with a different body (409/422).",
+    "Test by sending the same request twice."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "API fundamentals, REST principles, resources and endpoints",
+   "minutes": 14,
+   "summary": "What an API is, what makes it RESTful, and how to name resources.",
+   "simple": "An **API** is a contract that lets programs talk to each other. A **REST** API exposes **resources** (users, orders) at URLs and uses standard HTTP methods to act on them, exchanging representations, usually JSON.",
+   "technical": "REST (Representational State Transfer) is an architectural style with constraints:\n- **Client–server**: UI and data storage evolve separately.\n- **Stateless**: each request carries everything needed (e.g. the auth token); the server keeps no per-client conversation state between requests. This makes horizontal scaling easy.\n- **Cacheable**: responses say whether they can be cached.\n- **Uniform interface**: resources identified by URIs, manipulated through representations, with standard methods and status codes.\n- **Layered system**: proxies, load balancers and CDNs can sit in between transparently.\n\nEndpoint design:\n- Use **nouns** and plural collections: `/orders`, `/orders/42`, `/users/7/orders`.\n- Let the **method** carry the verb: `POST /orders`, not `POST /createOrder`.\n- Keep nesting shallow (one level). Use query parameters for filtering: `/orders?status=paid`.\n- Lowercase, hyphenated paths: `/order-items`.\n\nFor non-CRUD actions, model a sub-resource or action: `POST /orders/42/cancellation` or pragmatic `POST /orders/42/cancel`.",
+   "analogy": "A REST API is a library: resources are books with call numbers (URLs), and a small set of desk actions (borrow, return, renew) works the same for every book. You don't need a different procedure for each title.",
+   "example": {
+    "lang": "http",
+    "code": "GET    /api/v1/orders?status=paid&page=2     list paid orders\nPOST   /api/v1/orders                        create an order\nGET    /api/v1/orders/42                     read order 42\nPATCH  /api/v1/orders/42                     change some fields\nDELETE /api/v1/orders/42                     delete it\nGET    /api/v1/customers/7/orders            orders of customer 7\n\n# avoid\nPOST   /api/getOrders\nGET    /api/deleteOrder?id=42",
+    "explain": "One resource, one URL shape, and the HTTP method expresses intent. The 'avoid' lines put verbs in URLs and use GET for a destructive action, which caches and crawlers can trigger."
+   },
+   "terms": [
+    [
+     "Resource",
+     "A named thing exposed by the API, e.g. an order."
+    ],
+    [
+     "Representation",
+     "The format a resource is transferred in, e.g. JSON."
+    ],
+    [
+     "Stateless",
+     "Server stores no client session state between requests."
+    ],
+    [
+     "Endpoint",
+     "Method + URL combination."
+    ]
+   ],
+   "remember": [
+    "Nouns in URLs, verbs in methods.",
+    "Statelessness is what makes REST APIs scale horizontally.",
+    "Filtering belongs in query parameters."
+   ],
+   "mistakes": [
+    "Verb-style URLs like `/getUser`.",
+    "Using GET for operations that change data.",
+    "Deep nesting like `/a/1/b/2/c/3/d`."
+   ],
+   "interview": [
+    "What does stateless mean in REST, and why does it matter?",
+    "Design the endpoints for a blog with posts and comments."
+   ],
+   "practice": [
+    "Can you explain: the REST constraints in your own words?",
+    "Can you build: an endpoint map for a library system?"
+   ],
+   "id": "rest-principles"
+  },
+  {
+   "title": "HTTP methods, status codes, CRUD and idempotency",
+   "minutes": 15,
+   "summary": "Map CRUD to methods, choose correct status codes, and understand safe and idempotent methods.",
+   "simple": "CRUD maps to HTTP: Create = POST, Read = GET, Update = PUT/PATCH, Delete = DELETE. **Status codes** tell the client what happened. **Idempotent** means doing it twice has the same effect as once.",
+   "technical": "- `GET`: read. Safe (no side effects) and idempotent.\n- `POST`: create / non-idempotent action. Neither safe nor idempotent: two POSTs can create two orders.\n- `PUT`: replace the whole resource at a known URL. Idempotent.\n- `PATCH`: partial update. Not guaranteed idempotent (e.g. \"increment counter\"), though often is.\n- `DELETE`: remove. Idempotent: the resource is gone either way (second call may return 404, the state is the same).\n\nIdempotency matters because networks fail: clients and proxies retry. For POST payments, accept an **Idempotency-Key** header and store the result per key so a retry returns the original response instead of charging twice.\n\nStatus codes:\n- **200 OK**, **201 Created** (+ `Location` header), **204 No Content** (successful DELETE).\n- **400 Bad Request** (malformed/invalid), **401 Unauthorized** (not authenticated), **403 Forbidden** (authenticated, not allowed), **404 Not Found**, **409 Conflict** (state conflict, duplicate), **422 Unprocessable Entity** (semantically invalid, used by some APIs), **429 Too Many Requests**.\n- **500 Internal Server Error** (your bug), **502 Bad Gateway** / **503 Service Unavailable** / **504 Gateway Timeout** (upstream/proxy problems).\n\nRule: 4xx = client should change the request; 5xx = server problem, retrying may help.",
+   "analogy": "Pressing an elevator call button is idempotent: pressing it five times still calls one elevator. Ordering a coffee (POST) isn't: say it twice and you pay for two.",
+   "example": {
+    "lang": "http",
+    "code": "POST /api/payments\nIdempotency-Key: 6f1c2a8e-...\nContent-Type: application/json\n\n{\"order_id\": 42, \"amount\": \"19.99\"}\n\nHTTP/1.1 201 Created\nLocation: /api/payments/981\n{\"id\": 981, \"status\": \"captured\"}\n\n# client times out and retries with the SAME key\nHTTP/1.1 201 Created          (stored response replayed; no second charge)\n{\"id\": 981, \"status\": \"captured\"}",
+    "explain": "The idempotency key turns a dangerous non-idempotent POST into a safely retryable one."
+   },
+   "terms": [
+    [
+     "Safe method",
+     "Does not change server state (GET, HEAD)."
+    ],
+    [
+     "Idempotent",
+     "Repeating has the same effect as doing once."
+    ],
+    [
+     "201 Created",
+     "Resource created; include Location."
+    ],
+    [
+     "401 vs 403",
+     "Not authenticated vs authenticated but forbidden."
+    ],
+    [
+     "Idempotency-Key",
+     "Client-generated key for safe retries of POST."
+    ]
+   ],
+   "remember": [
+    "GET/PUT/DELETE are idempotent; POST isn't.",
+    "401 = who are you? 403 = I know you, and no.",
+    "4xx = fix the request; 5xx = server problem."
+   ],
+   "mistakes": [
+    "Returning 200 with `{\"error\": ...}` for failures.",
+    "Using 403 when the user isn't logged in.",
+    "Retrying non-idempotent POSTs blindly."
+   ],
+   "interview": [
+    "Is PATCH idempotent? Explain.",
+    "How would you make a payment endpoint safe to retry?"
+   ],
+   "practice": [
+    "Can you use: pick the right status for 10 scenarios (duplicate email, expired token, missing record…)?",
+    "Can you explain: why DELETE is idempotent even though the second call returns 404."
+   ],
+   "id": "rest-methods-status"
+  },
+  {
+   "title": "JSON, pagination, filtering and API versioning",
+   "minutes": 14,
+   "summary": "Shape responses consistently, page large collections and evolve the API without breaking clients.",
+   "simple": "APIs usually speak **JSON**. Large collections are returned in **pages**. Clients narrow results with **filters**. When you must make breaking changes, **versioning** keeps old clients working.",
+   "technical": "JSON: objects, arrays, strings, numbers, booleans, null. Pick a naming convention (`snake_case` or `camelCase`) and keep it. Use ISO 8601 UTC timestamps (`2024-03-03T10:00:00Z`). Send money as strings or integer minor units (cents) to avoid float errors. Set `Content-Type: application/json`.\n\nPagination styles:\n- **Offset/limit** (`?limit=20&offset=40`): simple, supports jumping to pages, but `OFFSET` gets slow on huge tables and rows shift when new data is inserted.\n- **Cursor/keyset** (`?cursor=eyJpZCI6...`): server remembers the last seen sort key (`WHERE id < 980 ORDER BY id DESC LIMIT 20`). Fast and stable; no random page jumps.\nReturn metadata: `next`/`previous` links and possibly `count`. Always cap page size.\n\nFiltering/sorting/search: `?status=paid&created_after=2024-01-01&ordering=-created_at&search=lamp`. Whitelist allowed fields; never pass raw input into SQL.\n\nVersioning: URL (`/api/v1/`), header (`Accept: application/vnd.myapi.v2+json`), or query param. URL versioning is the most visible and common. **Additive changes** (new optional fields, new endpoints) don't need a new version; **breaking changes** (removing/renaming fields, changing types or meaning) do. Deprecate with notice and a sunset date.",
+   "analogy": "Pagination is reading a long book with a bookmark (cursor) rather than counting from page one each time (offset). Versioning is a published edition of the book: you can release a second edition without recalling the first.",
+   "example": {
+    "lang": "json",
+    "code": "GET /api/v1/orders?status=paid&limit=2\n\n{\n  \"data\": [\n    {\"id\": 981, \"total\": \"19.99\", \"created_at\": \"2024-03-03T10:00:00Z\"},\n    {\"id\": 977, \"total\": \"5.00\",  \"created_at\": \"2024-03-03T09:41:12Z\"}\n  ],\n  \"next\": \"/api/v1/orders?status=paid&limit=2&cursor=eyJpZCI6OTc3fQ\",\n  \"previous\": null\n}",
+    "explain": "Money as strings, UTC timestamps, and an opaque cursor for the next page. Clients follow `next` instead of computing offsets."
+   },
+   "terms": [
+    [
+     "Offset pagination",
+     "Skip N rows, take M."
+    ],
+    [
+     "Cursor pagination",
+     "Continue after the last seen key."
+    ],
+    [
+     "Breaking change",
+     "Change that makes existing clients fail."
+    ],
+    [
+     "ISO 8601",
+     "Standard date-time format."
+    ]
+   ],
+   "remember": [
+    "Cap page size; return next links.",
+    "Additive changes don't need a new version.",
+    "Money as string or integer cents, never float."
+   ],
+   "mistakes": [
+    "Unbounded list endpoints.",
+    "Renaming fields in place and breaking mobile apps.",
+    "Local-time timestamps without offsets."
+   ],
+   "interview": [
+    "Offset vs cursor pagination trade-offs?",
+    "Which changes count as breaking?"
+   ],
+   "practice": [
+    "Can you build: a cursor-paginated endpoint (keyset on id)?",
+    "Can you explain: why OFFSET 1,000,000 is slow."
+   ],
+   "id": "rest-pagination-versioning"
+  },
+  {
+   "title": "Authentication, authorization and error handling",
+   "minutes": 14,
+   "summary": "Secure endpoints and return consistent, helpful errors.",
+   "simple": "**Authentication** identifies the caller (API key, session cookie, bearer token, OAuth). **Authorization** decides what that caller can access. Good **error handling** returns the right status and a consistent, useful body — without leaking internals.",
+   "technical": "Common authentication schemes:\n- **API keys** for server-to-server: sent in a header (`X-API-Key`), stored hashed, rotatable, scoped.\n- **Session cookies** for browser apps on the same site (with CSRF protection).\n- **Bearer tokens / JWT**: `Authorization: Bearer <token>`; common for SPAs and mobile.\n- **OAuth 2.0 / OpenID Connect**: delegated authorization (\"Sign in with Google\"), the client gets tokens from an authorization server.\nAlways over HTTPS. Never put credentials in URLs (they end up in logs).\n\nAuthorization models: role-based (RBAC: admin/editor/viewer), and object ownership checks on **every** request. **Broken object-level authorization** (changing `/orders/41` to `/orders/42` and seeing someone else's data) is the #1 API vulnerability in the OWASP API Top 10.\n\nError format — pick one and use it everywhere, e.g. RFC 9457 Problem Details:\n```json\n{\"type\": \"https://api.example.com/errors/validation\", \"title\": \"Invalid request\",\n \"status\": 400, \"detail\": \"total must be positive\", \"errors\": {\"total\": [\"must be > 0\"]}}\n```\nInclude a request/correlation id for support. Don't return stack traces or SQL errors to clients; log them server-side.",
+   "analogy": "Authentication is the hotel checking your passport at check-in. Authorization is your key card opening only your room. Good error handling is the front desk telling you \"your card expired, renew it at reception\" rather than \"error\".",
+   "example": {
+    "lang": "json",
+    "code": "GET /api/v1/orders/42\nAuthorization: Bearer eyJhbGciOi...\n\nHTTP/1.1 404 Not Found\nContent-Type: application/problem+json\n{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Order not found.\",\n  \"request_id\": \"req_7Hk2\"\n}",
+    "explain": "Order 42 exists but belongs to someone else. Returning 404 (not 403) avoids confirming that it exists. The request_id lets support find the server log."
+   },
+   "terms": [
+    [
+     "API key",
+     "Static secret identifying a calling application."
+    ],
+    [
+     "Bearer token",
+     "Token sent in the Authorization header."
+    ],
+    [
+     "OAuth 2.0",
+     "Framework for delegated authorization."
+    ],
+    [
+     "BOLA",
+     "Broken Object Level Authorization: accessing others' objects by ID."
+    ],
+    [
+     "Problem Details",
+     "Standard JSON error format (RFC 9457)."
+    ]
+   ],
+   "remember": [
+    "HTTPS always; credentials never in URLs.",
+    "Check object ownership on every request.",
+    "One error format everywhere; no stack traces to clients."
+   ],
+   "mistakes": [
+    "Trusting a `user_id` sent in the request body.",
+    "Different error shapes from every endpoint.",
+    "Leaking `IntegrityError: duplicate key...` to clients."
+   ],
+   "interview": [
+    "What is BOLA/IDOR and how do you prevent it?",
+    "When would you use API keys vs OAuth?"
+   ],
+   "practice": [
+    "Can you build: a consistent error handler for your API?",
+    "Can you debug: a security report says changing an ID in the URL shows other users' invoices."
+   ],
+   "id": "rest-auth-errors"
+  }
+ ]
+}

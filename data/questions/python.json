@@ -1,0 +1,254 @@
+[
+ {
+  "topic": "Aliasing",
+  "lesson": "python-fundamentals",
+  "difficulty": "medium",
+  "question": "What does this print?",
+  "options": [
+   "[1, 2, 3]",
+   "Error",
+   "None",
+   "[1, 2]"
+  ],
+  "correctAnswer": 0,
+  "explanation": "`b = a` binds a second name to the same list; appending through `b` changes the one object.",
+  "code": "a = [1, 2]\nb = a\nb.append(3)\nprint(a)",
+  "codeLang": "python",
+  "id": "python-q01",
+  "module": "python"
+ },
+ {
+  "topic": "Equality",
+  "lesson": "python-fundamentals",
+  "difficulty": "easy",
+  "question": "Which is the idiomatic check for a missing value?",
+  "options": [
+   "`if x is None:`",
+   "`if x == None:`",
+   "`if x = None:`",
+   "`if None(x):`"
+  ],
+  "correctAnswer": 0,
+  "explanation": "`None` is a singleton, so identity (`is`) is correct and can't be fooled by a custom `__eq__`.",
+  "id": "python-q02",
+  "module": "python"
+ },
+ {
+  "topic": "Floats",
+  "lesson": "python-fundamentals",
+  "difficulty": "medium",
+  "question": "Why is `0.1 + 0.2 == 0.3` False in Python?",
+  "options": [
+   "Binary floating point can't represent 0.1 exactly, so the sum is 0.30000000000000004",
+   "`==` doesn't work on floats",
+   "Python has a bug",
+   "Python rounds to integers"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Use `math.isclose()` for comparisons and `decimal.Decimal` for money.",
+  "id": "python-q03",
+  "module": "python"
+ },
+ {
+  "topic": "Defaults",
+  "lesson": "python-functions-scope",
+  "difficulty": "hard",
+  "question": "What is printed?",
+  "options": [
+   "[1] [2]",
+   "[1] [1, 2]",
+   "[1, 2] [1, 2]",
+   "Error"
+  ],
+  "correctAnswer": 1,
+  "explanation": "The default list is created once at definition and shared between calls.",
+  "code": "def f(x, acc=[]):\n    acc.append(x)\n    return acc\nprint(f(1), end=' ')\nprint(f(2))",
+  "codeLang": "python",
+  "id": "python-q04",
+  "module": "python"
+ },
+ {
+  "topic": "Scope",
+  "lesson": "python-functions-scope",
+  "difficulty": "medium",
+  "question": "Why does this raise UnboundLocalError?",
+  "options": [
+   "`count` is a builtin",
+   "Assigning to `count` inside the function makes it local, so reading it before assignment fails",
+   "`+=` isn't valid on ints",
+   "Globals can't be read inside functions"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Add `global count` (or better, avoid mutable globals).",
+  "code": "count = 0\ndef inc():\n    count += 1\ninc()",
+  "codeLang": "python",
+  "id": "python-q05",
+  "module": "python"
+ },
+ {
+  "topic": "Containers",
+  "lesson": "python-collections",
+  "difficulty": "easy",
+  "question": "What does `{}` create?",
+  "options": [
+   "An empty tuple",
+   "An empty dict",
+   "An empty set",
+   "A syntax error"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Use `set()` for an empty set.",
+  "id": "python-q06",
+  "module": "python"
+ },
+ {
+  "topic": "Complexity",
+  "lesson": "python-collections",
+  "difficulty": "medium",
+  "question": "You check `if email in seen` inside a loop over 1 million emails. Which type should `seen` be?",
+  "options": [
+   "list",
+   "str",
+   "set",
+   "tuple"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Set membership is average O(1); list/tuple membership scans O(n).",
+  "id": "python-q07",
+  "module": "python"
+ },
+ {
+  "topic": "Comprehensions",
+  "lesson": "python-collections",
+  "difficulty": "medium",
+  "question": "What is the result?",
+  "options": [
+   "{0: 0, 1: 1, 2: 4}",
+   "[0, 4]",
+   "{0, 4}",
+   "{0: 0, 2: 4}"
+  ],
+  "correctAnswer": 3,
+  "explanation": "The `if` keeps only even n; the dict maps n to n squared.",
+  "code": "{n: n * n for n in range(3) if n % 2 == 0}",
+  "codeLang": "python",
+  "id": "python-q08",
+  "module": "python"
+ },
+ {
+  "topic": "Exceptions",
+  "lesson": "python-errors-modules",
+  "difficulty": "medium",
+  "question": "In try/except/else/finally, when does `else` run?",
+  "options": [
+   "Only when the try block raised no exception",
+   "Only when an exception was caught",
+   "Only after finally",
+   "Always"
+  ],
+  "correctAnswer": 0,
+  "explanation": "`finally` always runs; `else` runs only on success, before finally.",
+  "id": "python-q09",
+  "module": "python"
+ },
+ {
+  "topic": "Virtual envs",
+  "lesson": "python-errors-modules",
+  "difficulty": "medium",
+  "question": "`pip install requests` succeeded but `import requests` fails with ModuleNotFoundError. Most likely cause?",
+  "options": [
+   "pip installed into a different interpreter/venv than the one running your script",
+   "Module names are case-sensitive on Windows",
+   "requests is broken",
+   "Imports need restarting the OS"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Use `python -m pip install ...` with the same `python` you run, and activate the project's venv.",
+  "id": "python-q10",
+  "module": "python"
+ },
+ {
+  "topic": "OOP",
+  "lesson": "python-oop",
+  "difficulty": "medium",
+  "question": "What best describes polymorphism?",
+  "options": [
+   "Copying a class",
+   "Different classes responding to the same method call in their own way",
+   "A class with many attributes",
+   "Hiding attributes with underscores"
+  ],
+  "correctAnswer": 1,
+  "explanation": "E.g. EmailNotifier and SmsNotifier both implement `send()`; callers don't care which they have.",
+  "id": "python-q11",
+  "module": "python"
+ },
+ {
+  "topic": "Class attributes",
+  "lesson": "python-oop",
+  "difficulty": "hard",
+  "question": "What prints?",
+  "options": [
+   "[1] [1]",
+   "[] []",
+   "Error",
+   "[1] []"
+  ],
+  "correctAnswer": 0,
+  "explanation": "`items` is a class attribute: one list shared by all instances. Initialize per-instance lists in `__init__`.",
+  "code": "class Cart:\n    items = []\n    def add(self, x):\n        self.items.append(x)\na, b = Cart(), Cart()\na.add(1)\nprint(a.items, b.items)",
+  "codeLang": "python",
+  "id": "python-q12",
+  "module": "python"
+ },
+ {
+  "topic": "Decorators",
+  "lesson": "python-advanced",
+  "difficulty": "medium",
+  "question": "`@cache` placed above `def f():` is equivalent to…",
+  "options": [
+   "`f()` then `cache()`",
+   "`f = cache(f)`",
+   "Nothing; decorators are comments",
+   "`cache = f(cache)`"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Decoration rebinds the name to whatever the decorator returns.",
+  "id": "python-q13",
+  "module": "python"
+ },
+ {
+  "topic": "Generators",
+  "lesson": "python-advanced",
+  "difficulty": "hard",
+  "question": "What prints?",
+  "options": [
+   "[] []",
+   "Error",
+   "[0, 1, 2] []",
+   "[0, 1, 2] [0, 1, 2]"
+  ],
+  "correctAnswer": 2,
+  "explanation": "A generator is exhausted after one full iteration.",
+  "code": "g = (i for i in range(3))\nprint(list(g), list(g))",
+  "codeLang": "python",
+  "id": "python-q14",
+  "module": "python"
+ },
+ {
+  "topic": "Testing",
+  "lesson": "python-quality",
+  "difficulty": "easy",
+  "question": "In pytest, how do you check that a function raises ValueError?",
+  "options": [
+   "`assert raises(ValueError)`",
+   "`try: f() except: pass`",
+   "`with pytest.raises(ValueError): f()`",
+   "`pytest.fail(ValueError)`"
+  ],
+  "correctAnswer": 2,
+  "explanation": "The context manager fails the test if the expected exception isn't raised.",
+  "id": "python-q15",
+  "module": "python"
+ }
+]

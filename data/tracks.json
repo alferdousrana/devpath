@@ -1,0 +1,57 @@
+{
+ "tracks": [
+  {
+   "id": "backend",
+   "code": "A",
+   "title": "AI / Backend Engineer",
+   "status": "active",
+   "description": "Linux to networking: everything needed to build, ship and run backend services.",
+   "modules": [
+    "linux",
+    "git",
+    "python",
+    "django",
+    "rest",
+    "postgres",
+    "docker",
+    "http",
+    "dns",
+    "ssh",
+    "env",
+    "networking"
+   ]
+  },
+  {
+   "id": "frontend",
+   "code": "B",
+   "title": "Frontend Engineer",
+   "status": "planned",
+   "description": "HTML, CSS, JavaScript, TypeScript, accessibility, a component framework.",
+   "modules": []
+  },
+  {
+   "id": "devops",
+   "code": "C",
+   "title": "DevOps / Cloud Engineer",
+   "status": "planned",
+   "description": "CI/CD, infrastructure as code, Kubernetes, observability, cloud networking.",
+   "modules": []
+  },
+  {
+   "id": "security",
+   "code": "D",
+   "title": "Cybersecurity Engineer",
+   "status": "planned",
+   "description": "Threat modeling, web security, cryptography in practice, incident response.",
+   "modules": []
+  },
+  {
+   "id": "aiml",
+   "code": "E",
+   "title": "AI/ML Engineer",
+   "status": "planned",
+   "description": "NumPy, pandas, ML fundamentals, deep learning, LLM apps, MLOps.",
+   "modules": []
+  }
+ ]
+}

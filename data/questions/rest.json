@@ -1,0 +1,194 @@
+[
+ {
+  "topic": "REST design",
+  "lesson": "rest-principles",
+  "difficulty": "easy",
+  "question": "Which endpoint follows REST conventions for creating an order?",
+  "options": [
+   "`GET /orders/new`",
+   "`POST /orders`",
+   "`PUT /order/create`",
+   "`POST /createOrder`"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Collection noun + POST. The method expresses the action.",
+  "id": "rest-q01",
+  "module": "rest"
+ },
+ {
+  "topic": "Statelessness",
+  "lesson": "rest-principles",
+  "difficulty": "medium",
+  "question": "What does 'stateless' mean for a REST API?",
+  "options": [
+   "The API has no authentication",
+   "Each request contains everything needed to process it; the server keeps no client session between requests",
+   "The database has no state",
+   "Responses are never cached"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Any server instance can handle any request, which makes scaling out simple.",
+  "id": "rest-q02",
+  "module": "rest"
+ },
+ {
+  "topic": "Idempotency",
+  "lesson": "rest-methods-status",
+  "difficulty": "medium",
+  "question": "Which method is NOT idempotent by definition?",
+  "options": [
+   "GET",
+   "POST",
+   "PUT",
+   "DELETE"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Two identical POSTs may create two resources. Use an Idempotency-Key for safe retries.",
+  "id": "rest-q03",
+  "module": "rest"
+ },
+ {
+  "topic": "Status codes",
+  "lesson": "rest-methods-status",
+  "difficulty": "medium",
+  "question": "A logged-in user tries to delete another team's project and isn't allowed. Best status?",
+  "options": [
+   "400",
+   "401",
+   "500",
+   "403 (or 404 to hide existence)"
+  ],
+  "correctAnswer": 3,
+  "explanation": "401 means not authenticated. The user is authenticated but not permitted.",
+  "id": "rest-q04",
+  "module": "rest"
+ },
+ {
+  "topic": "Status codes",
+  "lesson": "rest-methods-status",
+  "difficulty": "easy",
+  "question": "Which status fits a successful creation?",
+  "options": [
+   "204",
+   "302",
+   "201",
+   "200"
+  ],
+  "correctAnswer": 2,
+  "explanation": "201 Created, ideally with a Location header pointing to the new resource.",
+  "id": "rest-q05",
+  "module": "rest"
+ },
+ {
+  "topic": "Status codes",
+  "lesson": "rest-methods-status",
+  "difficulty": "hard",
+  "question": "A signup request uses an email that already exists. Most appropriate status?",
+  "options": [
+   "201",
+   "404",
+   "500",
+   "409 Conflict"
+  ],
+  "correctAnswer": 3,
+  "explanation": "The request conflicts with current state. Some APIs use 400/422 with a field error, but 500 and 201 are wrong.",
+  "id": "rest-q06",
+  "module": "rest"
+ },
+ {
+  "topic": "PUT vs PATCH",
+  "lesson": "rest-methods-status",
+  "difficulty": "medium",
+  "question": "What's the difference between PUT and PATCH?",
+  "options": [
+   "PUT is only for files",
+   "PUT replaces the resource with the full representation; PATCH applies a partial update",
+   "PATCH is for creating",
+   "None"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Sending only some fields with PUT may null out the others, depending on the API.",
+  "id": "rest-q07",
+  "module": "rest"
+ },
+ {
+  "topic": "Pagination",
+  "lesson": "rest-pagination-versioning",
+  "difficulty": "hard",
+  "question": "Why is cursor pagination preferred for large, frequently-updated feeds?",
+  "options": [
+   "It returns all rows at once",
+   "It allows jumping to page 500",
+   "It avoids slow large OFFSET scans and doesn't skip/duplicate rows when new items are inserted",
+   "It needs no ordering"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Keyset queries use an index (`WHERE id < last_id`) and are stable as data changes.",
+  "id": "rest-q08",
+  "module": "rest"
+ },
+ {
+  "topic": "Versioning",
+  "lesson": "rest-pagination-versioning",
+  "difficulty": "medium",
+  "question": "Which change is breaking and needs a new API version?",
+  "options": [
+   "Adding a new endpoint",
+   "Renaming `total` to `amount`",
+   "Adding an optional query parameter",
+   "Adding an optional response field"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Existing clients reading `total` would break. Additive changes are backward compatible.",
+  "id": "rest-q09",
+  "module": "rest"
+ },
+ {
+  "topic": "Money in JSON",
+  "lesson": "rest-pagination-versioning",
+  "difficulty": "medium",
+  "question": "How should an API send monetary amounts?",
+  "options": [
+   "As floats like 19.99",
+   "Rounded to integers",
+   "As text with currency symbol only",
+   "As strings ('19.99') or integer minor units (1999)"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Floats can't represent decimal money exactly.",
+  "id": "rest-q10",
+  "module": "rest"
+ },
+ {
+  "topic": "Security",
+  "lesson": "rest-auth-errors",
+  "difficulty": "hard",
+  "question": "Changing `/invoices/100` to `/invoices/101` shows another customer's invoice. What is this vulnerability?",
+  "options": [
+   "Broken object-level authorization (IDOR/BOLA)",
+   "SQL injection",
+   "Rate limiting failure",
+   "CSRF"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Every lookup must be scoped to what the caller owns or may access.",
+  "id": "rest-q11",
+  "module": "rest"
+ },
+ {
+  "topic": "Errors",
+  "lesson": "rest-auth-errors",
+  "difficulty": "medium",
+  "question": "What should a 500 error response body contain for clients?",
+  "options": [
+   "The full stack trace",
+   "The SQL query that failed",
+   "Nothing, always empty",
+   "A generic message and a request id; details go to server logs"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Internals help attackers. A request id lets you correlate with logs.",
+  "id": "rest-q12",
+  "module": "rest"
+ }
+]
