@@ -1,0 +1,146 @@
+[
+ {
+  "topic": "Keys",
+  "lesson": "ssh-fundamentals",
+  "difficulty": "easy",
+  "question": "Which key goes into the server's `authorized_keys`?",
+  "options": [
+   "Your public key",
+   "Both keys",
+   "The server's host key",
+   "Your private key"
+  ],
+  "correctAnswer": 0,
+  "explanation": "The public key is safe to share; the private key never leaves your machine.",
+  "id": "ssh-q01",
+  "module": "ssh"
+ },
+ {
+  "topic": "Auth",
+  "lesson": "ssh-fundamentals",
+  "difficulty": "medium",
+  "question": "During public-key login, what proves your identity?",
+  "options": [
+   "Your private key is uploaded to the server",
+   "Your client signs a server challenge with the private key; the server verifies with your public key",
+   "The server emails you a code",
+   "Your IP address"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Only the signature travels, never the private key.",
+  "id": "ssh-q02",
+  "module": "ssh"
+ },
+ {
+  "topic": "Host keys",
+  "lesson": "ssh-fundamentals",
+  "difficulty": "hard",
+  "question": "SSH warns 'REMOTE HOST IDENTIFICATION HAS CHANGED'. What's the right reaction?",
+  "options": [
+   "Verify why: was the server rebuilt or its IP reused? Only then update the known_hosts entry",
+   "Disable StrictHostKeyChecking globally",
+   "Ignore it",
+   "Delete known_hosts and continue"
+  ],
+  "correctAnswer": 0,
+  "explanation": "It may be harmless (rebuilt server) or a man-in-the-middle. Confirm the new fingerprint out of band.",
+  "id": "ssh-q03",
+  "module": "ssh"
+ },
+ {
+  "topic": "Permissions",
+  "lesson": "ssh-keys-connect",
+  "difficulty": "medium",
+  "question": "Key login fails; `ssh -v` shows the key offered but rejected. authorized_keys contains the right key. Common cause?",
+  "options": [
+   "Wrong key type",
+   "Port 22 is closed",
+   "Server-side ~/.ssh or authorized_keys permissions are too open, so sshd ignores them",
+   "The passphrase is wrong"
+  ],
+  "correctAnswer": 2,
+  "explanation": "sshd requires ~/.ssh 700 and authorized_keys 600, owned by the user.",
+  "id": "ssh-q04",
+  "module": "ssh"
+ },
+ {
+  "topic": "Config",
+  "lesson": "ssh-keys-connect",
+  "difficulty": "easy",
+  "question": "What does an entry `Host prod` in `~/.ssh/config` allow?",
+  "options": [
+   "Creating a new key",
+   "Running a server named prod",
+   "Disabling encryption",
+   "Connecting with `ssh prod` using saved HostName, User, Port and key"
+  ],
+  "correctAnswer": 3,
+  "explanation": "It's a client-side alias with connection settings.",
+  "id": "ssh-q05",
+  "module": "ssh"
+ },
+ {
+  "topic": "Tunnels",
+  "lesson": "ssh-keys-connect",
+  "difficulty": "hard",
+  "question": "What does `ssh -L 5433:localhost:5432 prod` do?",
+  "options": [
+   "Copies the database",
+   "Opens port 5432 publicly on prod",
+   "Changes the SSH port",
+   "Forwards your local port 5433 through SSH to port 5432 on prod's localhost"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Great for reaching a database that only listens privately on the server.",
+  "id": "ssh-q06",
+  "module": "ssh"
+ },
+ {
+  "topic": "Transfer",
+  "lesson": "ssh-transfer-security",
+  "difficulty": "medium",
+  "question": "Which tool is best for repeatedly syncing a build directory to a server?",
+  "options": [
+   "telnet",
+   "ftp",
+   "rsync -avz",
+   "scp -r every time"
+  ],
+  "correctAnswer": 2,
+  "explanation": "rsync transfers only differences and can delete removed files.",
+  "id": "ssh-q07",
+  "module": "ssh"
+ },
+ {
+  "topic": "Hardening",
+  "lesson": "ssh-transfer-security",
+  "difficulty": "medium",
+  "question": "Which sshd_config setting disables password logins?",
+  "options": [
+   "PasswordAuthentication no",
+   "PubkeyAuthentication no",
+   "PermitRootLogin no",
+   "Port 2222"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Make sure key login works first, and keep a session open while changing it.",
+  "id": "ssh-q08",
+  "module": "ssh"
+ },
+ {
+  "topic": "Hardening",
+  "lesson": "ssh-transfer-security",
+  "difficulty": "medium",
+  "question": "Is moving SSH from port 22 to 2222 a strong security measure?",
+  "options": [
+   "No, SSH only works on 22",
+   "Yes, it stops all attacks",
+   "No; it reduces automated log noise, but real security comes from keys-only auth, no root login, firewalls and updates",
+   "Yes, ports above 1024 are encrypted"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Obscurity is not a control by itself.",
+  "id": "ssh-q09",
+  "module": "ssh"
+ }
+]

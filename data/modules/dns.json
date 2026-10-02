@@ -1,0 +1,243 @@
+{
+ "id": "dns",
+ "trackId": "backend",
+ "title": "DNS Basics",
+ "tagline": "How names become addresses, and how to tell when DNS is the problem.",
+ "overview": "Every deployment involves DNS: pointing a domain at your server, adding an `api.` subdomain, verifying ownership for certificates or GitHub Pages, configuring email. This module explains how resolution works, the record types you'll use, and a reliable troubleshooting routine.",
+ "objectives": [
+  "Explain the DNS hierarchy and the full resolution path.",
+  "Explain caching and TTL, and plan record changes.",
+  "Configure A, AAAA, CNAME, MX and TXT records correctly.",
+  "Diagnose DNS issues with dig and separate them from connectivity issues."
+ ],
+ "concepts": [
+  [
+   "Resolver",
+   "Client-side server that resolves names."
+  ],
+  [
+   "Authoritative server",
+   "Source of truth for a zone."
+  ],
+  [
+   "Record",
+   "Typed entry in a zone."
+  ],
+  [
+   "TTL",
+   "Cache lifetime."
+  ],
+  [
+   "Delegation",
+   "Pointing a zone to its nameservers."
+  ]
+ ],
+ "notes": [
+  "`dig` is the tool; learn to read its status and sections.",
+  "Always know where your domain is delegated.",
+  "Plan TTLs before migrations."
+ ],
+ "checkpoints": {
+  "explain": [
+   "The resolution path",
+   "CNAME vs A",
+   "TTL and propagation"
+  ],
+  "use": [
+   "dig, dig +trace, dig @server",
+   "Set up records for a new service"
+  ],
+  "debug": [
+   "NXDOMAIN after creating a record",
+   "Old IP still served",
+   "Wrong nameserver delegation"
+  ],
+  "build": [
+   "DNS for this app on GitHub Pages with a custom domain"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Trace a lookup",
+   "goal": "See the hierarchy with your own eyes.",
+   "steps": [
+    "Run `dig +trace` for three domains you use daily.",
+    "Note the TTLs at each level.",
+    "Query two public resolvers and compare answers and TTL countdowns."
+   ]
+  },
+  {
+   "title": "Custom domain for DevPath",
+   "goal": "Point a domain or subdomain at GitHub Pages.",
+   "steps": [
+    "Create a CNAME `learn.yourdomain.com` → `yourname.github.io`.",
+    "Set the custom domain in the repo's Pages settings.",
+    "Verify with `dig +short` and enable Enforce HTTPS."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "Domains, resolvers, nameservers and how a lookup works",
+   "minutes": 14,
+   "summary": "The DNS hierarchy and the steps that turn a name into an IP address.",
+   "simple": "**DNS** (Domain Name System) translates names like `api.example.com` into IP addresses. It's a distributed, hierarchical, heavily cached database.",
+   "technical": "Hierarchy (read right to left): the root `.` → **TLD** (`com`, `org`, `bd`) → **domain** (`example.com`, bought from a registrar) → **subdomains** (`api.example.com`).\n\nRoles:\n- **Stub resolver**: the small client in your OS/app.\n- **Recursive resolver**: does the work for you (your ISP's, `8.8.8.8`, `1.1.1.1`) and caches answers.\n- **Authoritative nameservers**: hold the actual records for a zone (configured at your DNS provider, e.g. Cloudflare, Route 53). The registrar points the domain to them via **NS records**.\n\nA lookup for `api.example.com` with an empty cache:\n1. App asks the OS stub resolver (which checks `/etc/hosts` and its cache).\n2. Stub asks the recursive resolver.\n3. Recursive asks a **root** server → referral to `.com` servers.\n4. Asks a `.com` TLD server → referral to `example.com`'s nameservers.\n5. Asks the **authoritative** server → gets the A/AAAA record.\n6. Caches it for its **TTL** and returns it.\n\n**TTL** (time to live, seconds) controls caching. Long TTLs reduce load but make changes slow to propagate; lower the TTL a day **before** a planned migration. DNS uses UDP port 53 (TCP for large responses/zone transfers); DoH/DoT encrypt it.",
+   "analogy": "DNS is asking for directions in a city you don't know: the information desk (recursive resolver) asks the national office (root), which sends it to the regional office (TLD), which sends it to the building manager (authoritative), who gives the exact room number (IP). The desk then remembers it for a while (TTL).",
+   "example": {
+    "lang": "bash",
+    "code": "$ dig +trace api.example.com | grep -E \"^\\.|^com\\.|example\\.com\\.\" | head\n.                 518400  IN  NS  a.root-servers.net.\ncom.              172800  IN  NS  a.gtld-servers.net.\nexample.com.      172800  IN  NS  ns1.dnsprovider.net.\napi.example.com.  300     IN  A   203.0.113.10",
+    "explain": "`+trace` walks the hierarchy itself: root → com → example.com's nameservers → the answer, with a 300-second TTL."
+   },
+   "terms": [
+    [
+     "Recursive resolver",
+     "Server that resolves names on behalf of clients and caches results."
+    ],
+    [
+     "Authoritative nameserver",
+     "Server holding a zone's real records."
+    ],
+    [
+     "TLD",
+     "Top-level domain like .com or .bd."
+    ],
+    [
+     "TTL",
+     "How long an answer may be cached."
+    ],
+    [
+     "Zone",
+     "The set of records a nameserver is authoritative for."
+    ]
+   ],
+   "remember": [
+    "Root → TLD → authoritative; the recursive resolver walks it and caches.",
+    "TTL decides how fast changes propagate.",
+    "Lower TTLs before migrations, not during."
+   ],
+   "mistakes": [
+    "Changing a record with a 24h TTL and expecting instant effect.",
+    "Forgetting `/etc/hosts` overrides (it beats DNS).",
+    "Confusing the registrar with the DNS host."
+   ],
+   "interview": [
+    "Explain step by step what happens when you resolve a new domain.",
+    "What is TTL and how does it affect a migration?"
+   ],
+   "practice": [
+    "Can you use: `dig +trace` to see the delegation chain?",
+    "Can you explain: recursive vs authoritative servers."
+   ],
+   "id": "dns-resolution"
+  },
+  {
+   "title": "Record types: A, AAAA, CNAME, MX, TXT (and NS)",
+   "minutes": 13,
+   "summary": "The records you'll configure for every backend service.",
+   "simple": "A DNS zone is a list of **records**. Each has a name, type, TTL and value. The common types map names to IPs, alias names, route email, and publish verification or security text.",
+   "technical": "- **A**: name → IPv4 address. `api.example.com. 300 IN A 203.0.113.10`\n- **AAAA**: name → IPv6 address.\n- **CNAME**: name → another name (alias). `www.example.com CNAME example.netlify.app`. The resolver then looks up the target. A CNAME can't coexist with other records at the same name, and the zone apex (`example.com` itself) can't be a CNAME — providers offer **ALIAS/ANAME** or CNAME flattening instead.\n- **MX**: mail servers for the domain, with priority (lower = preferred). `example.com MX 10 mail1.example.com`. Must point to a name, not an IP.\n- **TXT**: free text, used for **SPF** (`v=spf1 include:_spf.google.com ~all`), **DKIM** keys, **DMARC** policy, and domain ownership verification (Google, GitHub Pages, certificate issuance).\n- **NS**: delegates a zone to nameservers. **SOA**: zone metadata. **CAA**: which CAs may issue certificates. **SRV**: service location with port.\n\nTypical backend setup: `api` → A record to your load balancer, or CNAME to a cloud provider hostname; apex → ALIAS to the CDN; TXT records for email authentication and verification.",
+   "analogy": "An A record is a street address. A CNAME is a forwarding note: \"Ana now lives at Ben's place — look up Ben's address.\" MX is the mailroom sign. TXT is the notice board where you post proof you own the building.",
+   "example": {
+    "lang": "bash",
+    "code": "$ dig +short A example.com\n93.184.215.14\n$ dig +short AAAA example.com\n2606:2800:21f:cb07:6820:80da:af6b:8b2c\n$ dig +short CNAME www.github.com\ngithub.com.\n$ dig +short MX gmail.com\n5 gmail-smtp-in.l.google.com.\n10 alt1.gmail-smtp-in.l.google.com.\n$ dig +short TXT example.com\n\"v=spf1 -all\"",
+    "explain": "Each query asks for one record type. MX answers include priorities; TXT holds SPF and verification strings."
+   },
+   "terms": [
+    [
+     "A / AAAA",
+     "IPv4 / IPv6 address records."
+    ],
+    [
+     "CNAME",
+     "Alias to another hostname."
+    ],
+    [
+     "MX",
+     "Mail exchanger with priority."
+    ],
+    [
+     "TXT",
+     "Text record: SPF, DKIM, DMARC, verification."
+    ],
+    [
+     "ALIAS/ANAME",
+     "Provider feature for CNAME-like behavior at the apex."
+    ]
+   ],
+   "remember": [
+    "A/AAAA → IPs, CNAME → names.",
+    "No CNAME at the apex or next to other records.",
+    "Email auth lives in TXT (SPF/DKIM/DMARC)."
+   ],
+   "mistakes": [
+    "CNAME on the root domain.",
+    "MX pointing to an IP or to a CNAME.",
+    "Multiple SPF TXT records (only one is allowed)."
+   ],
+   "interview": [
+    "When do you use a CNAME vs an A record?",
+    "What are SPF and DKIM for?"
+   ],
+   "practice": [
+    "Can you build: the DNS records for app, api, www and email on a new domain?",
+    "Can you debug: GitHub Pages custom domain shows 'improperly configured'."
+   ],
+   "id": "dns-records"
+  },
+  {
+   "title": "DNS lookup and basic troubleshooting",
+   "minutes": 12,
+   "summary": "Use dig, nslookup and host to find out whether DNS is the problem.",
+   "simple": "\"It's always DNS\" is a joke because DNS problems look like everything else: timeouts, wrong site, certificate errors. A few commands tell you quickly whether a name resolves, to what, and from whose point of view.",
+   "technical": "Tools: `dig name type` (most detailed), `dig +short`, `nslookup name`, `host name`, `getent hosts name` (uses the system's resolution order including /etc/hosts — what your app actually sees).\n\nChecklist:\n1. **Does it resolve?** `dig api.example.com`. Status `NXDOMAIN` = the name doesn't exist; `SERVFAIL` = resolver couldn't get an answer (often broken DNSSEC or unreachable nameservers); `NOERROR` with no answer = name exists but not that record type.\n2. **What does the authoritative server say?** `dig @ns1.dnsprovider.net api.example.com` bypasses caches. If authoritative is right but your resolver is wrong, it's caching — wait for the TTL.\n3. **Compare resolvers**: `dig @1.1.1.1` vs `dig @8.8.8.8` vs your default.\n4. **Local overrides**: `/etc/hosts`, VPN DNS, corporate DNS, Docker's embedded DNS (`127.0.0.11`) inside containers.\n5. **Delegation**: `dig NS example.com` and `whois` — are the registrar's nameservers the ones you're editing?\n\nSeparate DNS from connectivity: if `dig` returns the right IP, test the service with `curl -v --resolve api.example.com:443:203.0.113.10 https://api.example.com` or `nc -zv IP 443`. Then it's no longer a DNS problem.",
+   "analogy": "Troubleshooting DNS is checking a phone book problem: is the name listed at all, does the publisher's master copy (authoritative) agree with your printed copy (cache), and is someone's sticky note (/etc/hosts) covering the real entry?",
+   "example": {
+    "lang": "bash",
+    "code": "$ dig api.example.com | grep -E \"status|ANSWER SECTION\" -A1\n;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN\n# name doesn't exist at all → check the record was created in the right zone\n\n$ dig NS example.com +short\nns1.olddns.net.        # registrar still delegates to the OLD provider\nns2.olddns.net.\n\n$ dig @ns1.newdns.net api.example.com +short\n203.0.113.10           # record exists at the new provider, but nobody asks it",
+    "explain": "The record was added at a new DNS provider, but the registrar's NS records still point to the old one. Fix the delegation at the registrar."
+   },
+   "terms": [
+    [
+     "NXDOMAIN",
+     "The queried name does not exist."
+    ],
+    [
+     "SERVFAIL",
+     "The resolver failed to get an answer."
+    ],
+    [
+     "dig @server",
+     "Query a specific nameserver directly."
+    ],
+    [
+     "Delegation",
+     "NS records at the parent pointing to the zone's nameservers."
+    ],
+    [
+     "/etc/hosts",
+     "Local file that overrides DNS."
+    ]
+   ],
+   "remember": [
+    "NXDOMAIN ≠ SERVFAIL ≠ empty NOERROR.",
+    "Ask the authoritative server directly to bypass caches.",
+    "Once DNS returns the right IP, debug connectivity separately."
+   ],
+   "mistakes": [
+    "Editing records at a provider the domain isn't delegated to.",
+    "Forgetting a leftover /etc/hosts entry.",
+    "Calling a slow-propagating change 'broken' before TTL expires."
+   ],
+   "interview": [
+    "A new subdomain works for you but not for a colleague. How do you investigate?",
+    "What does SERVFAIL suggest?"
+   ],
+   "practice": [
+    "Can you debug: NXDOMAIN for a record you just created?",
+    "Can you use: separate a DNS problem from a firewall problem."
+   ],
+   "id": "dns-troubleshooting"
+  }
+ ]
+}

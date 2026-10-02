@@ -1,0 +1,32 @@
+/* Motion answers the user's actions. Everything respects prefers-reduced-motion. */
+@keyframes shimmer { to { background-position: -200% 0; } }
+@keyframes pulse { 50% { opacity: .35; } }
+@keyframes pageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes blockFill { from { transform: scaleY(.2); opacity: .2; } to { transform: none; opacity: 1; } }
+@keyframes pop { 0% { transform: scale(.96); } 60% { transform: scale(1.02); } 100% { transform: none; } }
+@keyframes shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+@keyframes xpRise { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.9); } 20% { opacity: 1; transform: translate(-50%, 0) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -24px); } }
+@keyframes achIn { from { opacity: 0; transform: translate(-50%, -16px) scale(.95); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes loadBlocks { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+
+#main.page-in { animation: pageIn .28s ease-out; }
+/* The one orchestrated moment: progress blocks fill in sequence when a page opens. */
+#main.page-in .blocks i.on { animation: blockFill .35s ease-out both; animation-delay: calc(var(--i) * 28ms); transform-origin: bottom; }
+.blocks.loading i { background: var(--indigo); animation: loadBlocks 1s infinite; }
+.blocks.loading i:nth-child(2) { animation-delay: .1s } .blocks.loading i:nth-child(3) { animation-delay: .2s }
+.blocks.loading i:nth-child(4) { animation-delay: .3s } .blocks.loading i:nth-child(5) { animation-delay: .4s }
+.blocks.loading i:nth-child(6) { animation-delay: .5s } .blocks.loading i:nth-child(7) { animation-delay: .6s }
+.blocks.loading i:nth-child(8) { animation-delay: .7s }
+.opt.right { animation: pop .3s ease-out; }
+.opt.wrong { animation: shake .35s ease-out; }
+.xp-burst { animation: xpRise 1.5s ease-out forwards; }
+.ach-pop { animation: achIn .4s cubic-bezier(.2, .9, .3, 1.2); }
+.ach-pop.out { opacity: 0; transition: opacity .4s; }
+.toast { animation: toastIn .22s ease-out; }
+.toast.out { opacity: 0; transform: translateY(6px); transition: .3s; }
+.goal.done .tick { animation: pop .3s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

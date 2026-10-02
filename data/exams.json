@@ -1,0 +1,140 @@
+[
+ {
+  "id": "exam-track-a-full",
+  "title": "Track A: full exam",
+  "scope": "track",
+  "count": 40,
+  "minutes": 60,
+  "passPercent": 70,
+  "description": "40 questions balanced across all 12 modules. The real checkpoint."
+ },
+ {
+  "id": "exam-track-a-quick",
+  "title": "Track A: quick check",
+  "scope": "track",
+  "count": 20,
+  "minutes": 25,
+  "passPercent": 70,
+  "description": "20 questions across all modules for a fast read on where you stand."
+ },
+ {
+  "id": "exam-linux",
+  "title": "Linux Basics exam",
+  "scope": "module",
+  "module": "linux",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the Linux Basics module."
+ },
+ {
+  "id": "exam-git",
+  "title": "Git & GitHub exam",
+  "scope": "module",
+  "module": "git",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the Git & GitHub module."
+ },
+ {
+  "id": "exam-python",
+  "title": "Python exam",
+  "scope": "module",
+  "module": "python",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the Python module."
+ },
+ {
+  "id": "exam-django",
+  "title": "Django / Django REST Framework exam",
+  "scope": "module",
+  "module": "django",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the Django / Django REST Framework module."
+ },
+ {
+  "id": "exam-rest",
+  "title": "REST API exam",
+  "scope": "module",
+  "module": "rest",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the REST API module."
+ },
+ {
+  "id": "exam-postgres",
+  "title": "PostgreSQL exam",
+  "scope": "module",
+  "module": "postgres",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the PostgreSQL module."
+ },
+ {
+  "id": "exam-docker",
+  "title": "Docker & Docker Compose exam",
+  "scope": "module",
+  "module": "docker",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the Docker & Docker Compose module."
+ },
+ {
+  "id": "exam-http",
+  "title": "HTTP / HTTPS exam",
+  "scope": "module",
+  "module": "http",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the HTTP / HTTPS module."
+ },
+ {
+  "id": "exam-dns",
+  "title": "DNS Basics exam",
+  "scope": "module",
+  "module": "dns",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the DNS Basics module."
+ },
+ {
+  "id": "exam-ssh",
+  "title": "SSH exam",
+  "scope": "module",
+  "module": "ssh",
+  "count": 9,
+  "minutes": 14,
+  "passPercent": 70,
+  "description": "9 randomized questions across the SSH module."
+ },
+ {
+  "id": "exam-env",
+  "title": "Environment Variables exam",
+  "scope": "module",
+  "module": "env",
+  "count": 8,
+  "minutes": 12,
+  "passPercent": 70,
+  "description": "8 randomized questions across the Environment Variables module."
+ },
+ {
+  "id": "exam-networking",
+  "title": "Basic Networking exam",
+  "scope": "module",
+  "module": "networking",
+  "count": 10,
+  "minutes": 15,
+  "passPercent": 70,
+  "description": "10 randomized questions across the Basic Networking module."
+ }
+]

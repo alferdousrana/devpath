@@ -1,0 +1,531 @@
+[
+ {
+  "id": "py-word-frequency",
+  "title": "Word frequency",
+  "category": "python",
+  "difficulty": "easy",
+  "module": "python",
+  "statement": "Write `word_freq(text: str) -> dict[str, int]` that counts how often each word appears.\nWords are case-insensitive and separated by whitespace; strip the punctuation `.,!?` from word edges.",
+  "examples": [
+   {
+    "input": "word_freq('Go go, GO!')",
+    "output": "{'go': 3}"
+   }
+  ],
+  "expected": "Returns a dict mapping lowercase words to counts. Empty or whitespace-only text returns `{}`.",
+  "hints": [
+   "Normalize first: `.lower()` then `.split()`.",
+   "`str.strip('.,!?')` removes punctuation from both ends.",
+   "`collections.Counter` does the counting; convert to `dict`."
+  ],
+  "tests": [
+   {
+    "input": "word_freq('Go go, GO!')",
+    "expected": "{'go': 3}"
+   },
+   {
+    "input": "word_freq('a b a')",
+    "expected": "{'a': 2, 'b': 1}"
+   },
+   {
+    "input": "word_freq('   ')",
+    "expected": "{}"
+   },
+   {
+    "input": "word_freq('Hi. hi?')",
+    "expected": "{'hi': 2}"
+   }
+  ],
+  "starter": "def word_freq(text: str) -> dict[str, int]:\n    # your code here\n    ...",
+  "solution": {
+   "lang": "python",
+   "code": "from collections import Counter\n\ndef word_freq(text: str) -> dict[str, int]:\n    words = (w.strip('.,!?') for w in text.lower().split())\n    return dict(Counter(w for w in words if w))"
+  },
+  "explanation": "Lowercasing and splitting normalizes input; a generator strips punctuation lazily; `if w` drops tokens that were only punctuation. Counter is O(n)."
+ },
+ {
+  "id": "py-flatten",
+  "title": "Flatten nested lists",
+  "category": "python",
+  "difficulty": "medium",
+  "module": "python",
+  "statement": "Write `flatten(items)` that takes a list which may contain nested lists to any depth and returns a flat list of the non-list values, in order.",
+  "examples": [
+   {
+    "input": "flatten([1, [2, [3, 4]], 5])",
+    "output": "[1, 2, 3, 4, 5]"
+   }
+  ],
+  "expected": "Order is preserved. Empty nested lists contribute nothing.",
+  "hints": [
+   "Recursion fits naturally: a list's flattening is the concatenation of its elements' flattenings.",
+   "Check `isinstance(x, list)`.",
+   "A generator with `yield from` avoids building intermediate lists."
+  ],
+  "tests": [
+   {
+    "input": "flatten([1, [2, [3, 4]], 5])",
+    "expected": "[1, 2, 3, 4, 5]"
+   },
+   {
+    "input": "flatten([])",
+    "expected": "[]"
+   },
+   {
+    "input": "flatten([[[]], [1]])",
+    "expected": "[1]"
+   },
+   {
+    "input": "flatten(['a', ['b']])",
+    "expected": "['a', 'b']"
+   }
+  ],
+  "starter": "def flatten(items):\n    ...",
+  "solution": {
+   "lang": "python",
+   "code": "def _walk(items):\n    for x in items:\n        if isinstance(x, list):\n            yield from _walk(x)\n        else:\n            yield x\n\ndef flatten(items):\n    return list(_walk(items))"
+  },
+  "explanation": "`yield from` delegates to the recursive generator. Each element is visited once: O(n) over all values. Very deep nesting can hit Python's recursion limit; an explicit stack avoids that."
+ },
+ {
+  "id": "py-retry-decorator",
+  "title": "Retry decorator",
+  "category": "python",
+  "difficulty": "hard",
+  "module": "python",
+  "statement": "Write a decorator factory `retry(times: int, exceptions=(Exception,))` that re-calls the decorated function when it raises one of `exceptions`, up to `times` total attempts. If every attempt fails, re-raise the last exception. Preserve the function's name with `functools.wraps`.",
+  "examples": [
+   {
+    "input": "@retry(3)\\ndef flaky(): ...  # fails twice then returns 'ok'",
+    "output": "'ok'",
+    "explain": "Third attempt succeeds."
+   }
+  ],
+  "expected": "Successful calls return the function's value. Exceptions not listed in `exceptions` propagate immediately without retrying.",
+  "hints": [
+   "You need three levels: `retry(...)` returns a decorator, which returns a wrapper.",
+   "Loop `for attempt in range(times)`; `return` on success.",
+   "Keep the last exception and `raise` it after the loop."
+  ],
+  "tests": [
+   {
+    "input": "demo_ok()",
+    "expected": "'ok'"
+   },
+   {
+    "input": "demo_name()",
+    "expected": "'flaky'"
+   },
+   {
+    "input": "demo_gives_up()",
+    "expected": "'ValueError'"
+   },
+   {
+    "input": "demo_not_listed()",
+    "expected": "'KeyError after 1 call'"
+   }
+  ],
+  "starter": "import functools\n\ndef retry(times, exceptions=(Exception,)):\n    ...",
+  "solution": {
+   "lang": "python",
+   "code": "import functools\n\ndef retry(times, exceptions=(Exception,)):\n    def decorator(func):\n        @functools.wraps(func)\n        def wrapper(*args, **kwargs):\n            last = None\n            for _ in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except exceptions as e:\n                    last = e\n            raise last\n        return wrapper\n    return decorator\n\n# --- test helpers ---\ndef _make(fail_times, exc=ValueError):\n    state = {\"n\": 0}\n    def flaky():\n        state[\"n\"] += 1\n        if state[\"n\"] <= fail_times:\n            raise exc(\"boom\")\n        return \"ok\"\n    return flaky, state\n\ndef demo_ok():\n    f, _ = _make(2); return retry(3)(f)()\ndef demo_name():\n    f, _ = _make(0); return retry(3)(f).__name__\ndef demo_gives_up():\n    f, _ = _make(5)\n    try: retry(3)(f)()\n    except ValueError as e: return type(e).__name__\ndef demo_not_listed():\n    f, s = _make(5, KeyError)\n    try: retry(3, exceptions=(ValueError,))(f)()\n    except KeyError: return f\"KeyError after {s['n']} call\""
+  },
+  "explanation": "The factory captures configuration, the decorator captures the function, and the wrapper runs the attempts. Catching only `exceptions` means programming errors like KeyError aren't hidden by retries. In production, add a delay with exponential backoff and jitter between attempts."
+ },
+ {
+  "id": "py-chunked",
+  "title": "Batch a stream",
+  "category": "python",
+  "difficulty": "medium",
+  "module": "python",
+  "statement": "Write a generator `chunked(iterable, size)` that yields lists of up to `size` items. It must work on any iterable, including generators that can only be consumed once, without loading everything into memory.",
+  "examples": [
+   {
+    "input": "list(chunked(range(5), 2))",
+    "output": "[[0, 1], [2, 3], [4]]"
+   }
+  ],
+  "expected": "The last chunk may be shorter. `size` must be a positive integer, otherwise raise `ValueError`.",
+  "hints": [
+   "Use `iter()` so you can pull items in a loop.",
+   "`itertools.islice(it, size)` takes up to `size` items.",
+   "Stop when a chunk comes back empty."
+  ],
+  "tests": [
+   {
+    "input": "list(chunked(range(5), 2))",
+    "expected": "[[0, 1], [2, 3], [4]]"
+   },
+   {
+    "input": "list(chunked([], 3))",
+    "expected": "[]"
+   },
+   {
+    "input": "list(chunked((x for x in 'abc'), 5))",
+    "expected": "[['a', 'b', 'c']]"
+   }
+  ],
+  "starter": "def chunked(iterable, size):\n    ...",
+  "solution": {
+   "lang": "python",
+   "code": "from itertools import islice\n\ndef chunked(iterable, size):\n    if size < 1:\n        raise ValueError(\"size must be >= 1\")\n    it = iter(iterable)\n    while chunk := list(islice(it, size)):\n        yield chunk"
+  },
+  "explanation": "Memory stays at O(size) because only one chunk exists at a time. This is the pattern for bulk-inserting millions of rows in batches. (Python 3.12 adds `itertools.batched`, which yields tuples.)"
+ },
+ {
+  "id": "algo-valid-brackets",
+  "title": "Valid brackets",
+  "category": "algorithm",
+  "difficulty": "easy",
+  "module": null,
+  "statement": "Write `is_balanced(s: str) -> bool` returning True if every `(`, `[` and `{` is closed by the matching bracket in the correct order. Other characters are ignored.",
+  "examples": [
+   {
+    "input": "is_balanced('{[()]}')",
+    "output": "True"
+   },
+   {
+    "input": "is_balanced('([)]')",
+    "output": "False"
+   }
+  ],
+  "expected": "Runs in O(n). An empty string is balanced.",
+  "hints": [
+   "The most recently opened bracket must close first: that's a stack.",
+   "Push openers; on a closer, the stack top must be its partner.",
+   "At the end, the stack must be empty."
+  ],
+  "tests": [
+   {
+    "input": "is_balanced('{[()]}')",
+    "expected": "True"
+   },
+   {
+    "input": "is_balanced('([)]')",
+    "expected": "False"
+   },
+   {
+    "input": "is_balanced('')",
+    "expected": "True"
+   },
+   {
+    "input": "is_balanced('((')",
+    "expected": "False"
+   },
+   {
+    "input": "is_balanced('a(b)c]')",
+    "expected": "False"
+   }
+  ],
+  "starter": "def is_balanced(s: str) -> bool:\n    ...",
+  "solution": {
+   "lang": "python",
+   "code": "def is_balanced(s: str) -> bool:\n    pairs = {\")\": \"(\", \"]\": \"[\", \"}\": \"{\"}\n    stack = []\n    for ch in s:\n        if ch in \"([{\":\n            stack.append(ch)\n        elif ch in pairs:\n            if not stack or stack.pop() != pairs[ch]:\n                return False\n    return not stack"
+  },
+  "explanation": "A stack models nesting: O(n) time, O(n) space in the worst case. The same idea powers parsers and expression evaluators."
+ },
+ {
+  "id": "algo-two-sum",
+  "title": "Two sum",
+  "category": "algorithm",
+  "difficulty": "easy",
+  "module": null,
+  "statement": "Write `two_sum(nums: list[int], target: int) -> tuple[int, int] | None` returning the indices `(i, j)` with `i < j` of two numbers adding to `target`, or `None` if none exist. Solve it in one pass.",
+  "examples": [
+   {
+    "input": "two_sum([2, 7, 11, 15], 9)",
+    "output": "(0, 1)"
+   }
+  ],
+  "expected": "O(n) time. If several pairs exist, return the first completed while scanning left to right.",
+  "hints": [
+   "For each number x, the partner you need is `target - x`.",
+   "Store numbers you've seen in a dict: value → index.",
+   "Check for the partner before inserting x (handles duplicates like [3, 3])."
+  ],
+  "tests": [
+   {
+    "input": "two_sum([2, 7, 11, 15], 9)",
+    "expected": "(0, 1)"
+   },
+   {
+    "input": "two_sum([3, 3], 6)",
+    "expected": "(0, 1)"
+   },
+   {
+    "input": "two_sum([1, 2], 7)",
+    "expected": "None"
+   },
+   {
+    "input": "two_sum([4, 1, 5, 3], 8)",
+    "expected": "(2, 3)"
+   }
+  ],
+  "starter": "def two_sum(nums, target):\n    ...",
+  "solution": {
+   "lang": "python",
+   "code": "def two_sum(nums, target):\n    seen = {}\n    for j, x in enumerate(nums):\n        i = seen.get(target - x)\n        if i is not None:\n            return (i, j)\n        seen[x] = j\n    return None"
+  },
+  "explanation": "Trading O(n) memory for O(n) time instead of the O(n²) brute force. Note `is not None`: index 0 is falsy, so `if i:` would be a bug."
+ },
+ {
+  "id": "algo-binary-search",
+  "title": "Binary search",
+  "category": "algorithm",
+  "difficulty": "medium",
+  "module": null,
+  "statement": "Write `search(sorted_nums: list[int], target: int) -> int` returning the index of `target` in a sorted list, or `-1`. Do not use `list.index` or `bisect`.",
+  "examples": [
+   {
+    "input": "search([1, 3, 5, 7, 9], 7)",
+    "output": "3"
+   }
+  ],
+  "expected": "O(log n). Works for empty lists and single elements.",
+  "hints": [
+   "Keep `lo` and `hi` bounds of the search range.",
+   "Compare with the middle element and discard half.",
+   "Loop while `lo <= hi`; watch for off-by-one errors."
+  ],
+  "tests": [
+   {
+    "input": "search([1, 3, 5, 7, 9], 7)",
+    "expected": "3"
+   },
+   {
+    "input": "search([1, 3, 5, 7, 9], 4)",
+    "expected": "-1"
+   },
+   {
+    "input": "search([], 1)",
+    "expected": "-1"
+   },
+   {
+    "input": "search([5], 5)",
+    "expected": "0"
+   },
+   {
+    "input": "search([1, 3, 5, 7, 9], 1)",
+    "expected": "0"
+   }
+  ],
+  "starter": "def search(sorted_nums, target):\n    ...",
+  "solution": {
+   "lang": "python",
+   "code": "def search(sorted_nums, target):\n    lo, hi = 0, len(sorted_nums) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if sorted_nums[mid] == target:\n            return mid\n        if sorted_nums[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1"
+  },
+  "explanation": "Each iteration halves the range, so at most about log₂(n) + 1 comparisons. B-tree indexes in PostgreSQL apply the same idea across disk pages."
+ },
+ {
+  "id": "be-paginate",
+  "title": "Paginate a list endpoint",
+  "category": "backend",
+  "difficulty": "medium",
+  "module": "rest",
+  "statement": "Write `paginate(items: list, page: int, size: int) -> dict` for an API that returns `{\"data\": [...], \"page\": page, \"size\": size, \"total\": n, \"next\": next_page_or_None}`.\nValidate input: `page` starts at 1; `size` must be 1–100. Invalid values raise `ValueError` (your view would turn it into a 400).",
+  "examples": [
+   {
+    "input": "paginate(list(range(5)), 2, 2)",
+    "output": "{'data': [2, 3], 'page': 2, 'size': 2, 'total': 5, 'next': 3}"
+   }
+  ],
+  "expected": "A page past the end returns an empty `data` list and `next: None`.",
+  "hints": [
+   "Offset = (page - 1) * size.",
+   "There is a next page if offset + size < total.",
+   "Validate before computing anything."
+  ],
+  "tests": [
+   {
+    "input": "paginate(list(range(5)), 2, 2)",
+    "expected": "{'data': [2, 3], 'page': 2, 'size': 2, 'total': 5, 'next': 3}"
+   },
+   {
+    "input": "paginate(list(range(5)), 3, 2)",
+    "expected": "{'data': [4], 'page': 3, 'size': 2, 'total': 5, 'next': None}"
+   },
+   {
+    "input": "paginate([], 1, 10)",
+    "expected": "{'data': [], 'page': 1, 'size': 10, 'total': 0, 'next': None}"
+   },
+   {
+    "input": "raises(lambda: paginate([1], 0, 10))",
+    "expected": "'ValueError'"
+   },
+   {
+    "input": "raises(lambda: paginate([1], 1, 500))",
+    "expected": "'ValueError'"
+   }
+  ],
+  "starter": "def paginate(items, page, size):\n    ...",
+  "solution": {
+   "lang": "python",
+   "code": "def paginate(items, page, size):\n    if page < 1:\n        raise ValueError(\"page must be >= 1\")\n    if not 1 <= size <= 100:\n        raise ValueError(\"size must be between 1 and 100\")\n    start = (page - 1) * size\n    total = len(items)\n    return {\"data\": items[start:start + size], \"page\": page, \"size\": size,\n            \"total\": total, \"next\": page + 1 if start + size < total else None}\n\ndef raises(fn):\n    try: fn()\n    except Exception as e: return type(e).__name__"
+  },
+  "explanation": "Capping `size` protects the server from `?size=1000000`. In a real database this becomes `LIMIT size OFFSET start`; for very large tables switch to cursor (keyset) pagination."
+ },
+ {
+  "id": "be-rate-limiter",
+  "title": "Fixed-window rate limiter",
+  "category": "backend",
+  "difficulty": "hard",
+  "module": "rest",
+  "statement": "Implement `RateLimiter(limit, window_seconds)` with `allow(client_id, now) -> bool`. Each client may make at most `limit` requests per fixed window (window number = `now // window_seconds`). `now` is passed in so the class is testable without sleeping.",
+  "examples": [
+   {
+    "input": "rl = RateLimiter(2, 60); rl.allow('a', 0), rl.allow('a', 1), rl.allow('a', 2)",
+    "output": "(True, True, False)"
+   }
+  ],
+  "expected": "Clients are independent. A new window resets the count. Return False when the limit is exceeded (your API returns 429).",
+  "hints": [
+   "Store `(window, count)` per client in a dict.",
+   "If the stored window differs from the current one, reset the count.",
+   "Injecting `now` makes time-based code deterministic in tests."
+  ],
+  "tests": [
+   {
+    "input": "run([('a',0),('a',1),('a',2)], 2, 60)",
+    "expected": "[True, True, False]"
+   },
+   {
+    "input": "run([('a',0),('b',0),('a',1)], 1, 60)",
+    "expected": "[True, True, False]"
+   },
+   {
+    "input": "run([('a',0),('a',1),('a',60)], 1, 60)",
+    "expected": "[True, False, True]"
+   }
+  ],
+  "starter": "class RateLimiter:\n    def __init__(self, limit, window_seconds):\n        ...\n    def allow(self, client_id, now):\n        ...",
+  "solution": {
+   "lang": "python",
+   "code": "class RateLimiter:\n    def __init__(self, limit, window_seconds):\n        self.limit, self.window = limit, window_seconds\n        self.state = {}                       # client -> (window_no, count)\n\n    def allow(self, client_id, now):\n        w = int(now // self.window)\n        win, count = self.state.get(client_id, (w, 0))\n        if win != w:\n            win, count = w, 0\n        if count >= self.limit:\n            return False\n        self.state[client_id] = (win, count + 1)\n        return True\n\ndef run(calls, limit, window):\n    rl = RateLimiter(limit, window)\n    return [rl.allow(c, t) for c, t in calls]"
+  },
+  "explanation": "Fixed windows are simple but allow bursts at window edges (2× limit across a boundary); sliding-window or token-bucket algorithms smooth that. In production the counters live in Redis (`INCR` + `EXPIRE`) so all app instances share them — this is what DRF throttling does with a cache backend."
+ },
+ {
+  "id": "be-parse-env",
+  "title": "Typed settings from the environment",
+  "category": "backend",
+  "difficulty": "medium",
+  "module": "env",
+  "statement": "Write `load_settings(env: dict) -> dict` that reads `DEBUG`, `PORT` and `ALLOWED_HOSTS` from a dict of strings (like `os.environ`):\n- `DEBUG`: True only for `1`, `true`, `yes` (any case); default False.\n- `PORT`: int, default 8000; raise `ValueError` if not an integer from 1 to 65535.\n- `ALLOWED_HOSTS`: comma-separated, whitespace trimmed, empty entries removed; default `[]`.\n- `SECRET_KEY`: required; raise `KeyError` if missing.",
+  "examples": [
+   {
+    "input": "load_settings({'SECRET_KEY': 'x', 'DEBUG': 'False', 'ALLOWED_HOSTS': 'a.com, b.com,'})",
+    "output": "{'debug': False, 'port': 8000, 'allowed_hosts': ['a.com', 'b.com'], 'secret_key': 'x'}"
+   }
+  ],
+  "expected": "Never treat the string 'False' as truthy. Fail fast on missing required values.",
+  "hints": [
+   "Write a small `parse_bool` helper.",
+   "`int()` raises ValueError for bad input; then check the range.",
+   "Use `env['SECRET_KEY']` (not `.get`) so a missing key raises."
+  ],
+  "tests": [
+   {
+    "input": "load_settings({'SECRET_KEY': 'x', 'DEBUG': 'False', 'ALLOWED_HOSTS': 'a.com, b.com,'})",
+    "expected": "{'debug': False, 'port': 8000, 'allowed_hosts': ['a.com', 'b.com'], 'secret_key': 'x'}"
+   },
+   {
+    "input": "load_settings({'SECRET_KEY': 'x', 'DEBUG': 'YES', 'PORT': '9000'})['port']",
+    "expected": "9000"
+   },
+   {
+    "input": "err(lambda: load_settings({}))",
+    "expected": "'KeyError'"
+   },
+   {
+    "input": "err(lambda: load_settings({'SECRET_KEY': 'x', 'PORT': '70000'}))",
+    "expected": "'ValueError'"
+   }
+  ],
+  "starter": "def load_settings(env):\n    ...",
+  "solution": {
+   "lang": "python",
+   "code": "def parse_bool(v, default=False):\n    if v is None:\n        return default\n    return v.strip().lower() in {\"1\", \"true\", \"yes\"}\n\ndef load_settings(env):\n    port = int(env.get(\"PORT\", \"8000\"))\n    if not 1 <= port <= 65535:\n        raise ValueError(\"PORT out of range\")\n    hosts = [h.strip() for h in env.get(\"ALLOWED_HOSTS\", \"\").split(\",\") if h.strip()]\n    return {\"debug\": parse_bool(env.get(\"DEBUG\")), \"port\": port,\n            \"allowed_hosts\": hosts, \"secret_key\": env[\"SECRET_KEY\"]}\n\ndef err(fn):\n    try: fn()\n    except Exception as e: return type(e).__name__"
+  },
+  "explanation": "Taking `env` as a parameter instead of reading `os.environ` directly makes the function pure and testable. Libraries like pydantic-settings and django-environ do this with type annotations."
+ },
+ {
+  "id": "sql-top-customers",
+  "title": "Top customers by revenue",
+  "category": "sql",
+  "difficulty": "medium",
+  "module": "postgres",
+  "statement": "Tables: `customers(id, email)` and `orders(id, customer_id, total numeric, status text, created_at timestamptz)`.\nReturn the 3 customers with the highest total revenue from **paid** orders in 2024, as `email, orders, revenue`, highest revenue first.",
+  "examples": [
+   {
+    "input": "customers: ana, ben, chi; ana has 2 paid orders (10, 20), ben 1 paid (50) and 1 cancelled (100)",
+    "output": "ben | 1 | 50.00\nana | 2 | 30.00"
+   }
+  ],
+  "expected": "Cancelled orders don't count. Customers with no paid orders in 2024 don't appear. Ties may be in any order.",
+  "hints": [
+   "JOIN orders to customers.",
+   "Filter status and date range in WHERE — use a half-open range `>= '2024-01-01' AND < '2025-01-01'`.",
+   "GROUP BY the customer, aggregate with count and sum, ORDER BY revenue DESC LIMIT 3."
+  ],
+  "tests": [
+   {
+    "input": "paid orders only",
+    "expected": "cancelled order of 100 excluded"
+   },
+   {
+    "input": "date range",
+    "expected": "orders from 2023 excluded"
+   },
+   {
+    "input": "limit",
+    "expected": "at most 3 rows"
+   }
+  ],
+  "starter": "SELECT ...\nFROM customers c\nJOIN orders o ON ...",
+  "solution": {
+   "lang": "sql",
+   "code": "SELECT c.email,\n       count(*)     AS orders,\n       sum(o.total) AS revenue\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nWHERE o.status = 'paid'\n  AND o.created_at >= '2024-01-01'\n  AND o.created_at <  '2025-01-01'\nGROUP BY c.id, c.email\nORDER BY revenue DESC\nLIMIT 3;"
+  },
+  "explanation": "An INNER JOIN is right here because customers without paid orders should be excluded. The half-open date range is index-friendly and avoids missing orders at 23:59:59.5 on Dec 31. Grouping by `c.id` (not just email) keeps distinct customers distinct. An index on `orders (status, created_at)` or `(customer_id)` helps at scale."
+ },
+ {
+  "id": "sql-no-orders",
+  "title": "Customers who never ordered",
+  "category": "sql",
+  "difficulty": "easy",
+  "module": "postgres",
+  "statement": "Using the same tables, list the emails of customers who have **never** placed an order, alphabetically.",
+  "examples": [
+   {
+    "input": "customers: ana (2 orders), ben (0 orders), chi (0 orders)",
+    "output": "ben\nchi"
+   }
+  ],
+  "expected": "Customers with any order (any status) are excluded.",
+  "hints": [
+   "You need rows that have no match: an anti-join.",
+   "Option 1: `LEFT JOIN orders` then `WHERE o.id IS NULL`.",
+   "Option 2: `WHERE NOT EXISTS (SELECT 1 FROM orders ...)`."
+  ],
+  "tests": [
+   {
+    "input": "customer with orders",
+    "expected": "excluded"
+   },
+   {
+    "input": "customer without orders",
+    "expected": "included"
+   },
+   {
+    "input": "ordering",
+    "expected": "alphabetical by email"
+   }
+  ],
+  "starter": "SELECT c.email\nFROM customers c\n...",
+  "solution": {
+   "lang": "sql",
+   "code": "SELECT c.email\nFROM customers c\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders o WHERE o.customer_id = c.id\n)\nORDER BY c.email;"
+  },
+  "explanation": "`NOT EXISTS` states the intent directly and the planner runs it as an anti-join. Avoid `NOT IN (SELECT customer_id FROM orders)`: if any customer_id is NULL, `NOT IN` returns no rows at all."
+ }
+]

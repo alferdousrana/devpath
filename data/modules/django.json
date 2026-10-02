@@ -1,0 +1,402 @@
+{
+ "id": "django",
+ "trackId": "backend",
+ "title": "Django / Django REST Framework",
+ "tagline": "Build production REST APIs with Python's most complete web framework.",
+ "overview": "Django gives you an ORM, migrations, authentication, an admin site and a security-conscious request pipeline. Django REST Framework layers serializers, API views, permissions, pagination, throttling and token auth on top. Together they're the backbone of many Python backends.\n\nYou'll follow a request through the framework, model data and avoid the N+1 trap, secure endpoints, and finish with the production features every API needs.",
+ "objectives": [
+  "Explain the request lifecycle, middleware and URL routing.",
+  "Model data, manage migrations and write efficient ORM queries.",
+  "Implement authentication and object-level authorization.",
+  "Validate input and shape output with serializers.",
+  "Pick between APIView, generics and ViewSets; wire routers.",
+  "Add pagination, filtering, throttling, JWT, tests and OpenAPI docs."
+ ],
+ "concepts": [
+  [
+   "MTV",
+   "Django's Model-Template-View pattern."
+  ],
+  [
+   "ORM",
+   "Python API that generates SQL."
+  ],
+  [
+   "Serializer",
+   "Validation + conversion layer in DRF."
+  ],
+  [
+   "ViewSet",
+   "CRUD actions grouped into one class."
+  ],
+  [
+   "JWT",
+   "Signed bearer token for stateless auth."
+  ]
+ ],
+ "notes": [
+  "Use a custom user model from day one.",
+  "Every private endpoint must filter by the requesting user.",
+  "Watch query counts; N+1 is the most common Django performance bug."
+ ],
+ "checkpoints": {
+  "explain": [
+   "The request lifecycle",
+   "select_related vs prefetch_related",
+   "How JWT auth works"
+  ],
+  "use": [
+   "ModelViewSet + router",
+   "Serializer validation",
+   "APITestCase"
+  ],
+  "debug": [
+   "N+1 queries",
+   "401 errors with JWT",
+   "Users seeing others' data"
+  ],
+  "build": [
+   "A Todo or Orders API with auth, pagination, filtering, tests and docs"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Orders API",
+   "goal": "Build a small but complete DRF service.",
+   "steps": [
+    "Create a project with a custom User and an `orders` app.",
+    "Model Order and OrderItem; run migrations.",
+    "Add a ModelViewSet scoped to the user, with JWT auth.",
+    "Add pagination, a status filter and an OpenAPI page with drf-spectacular.",
+    "Write tests for: create, list own only, 404 for others, 400 on invalid total."
+   ]
+  },
+  {
+   "title": "Query budget",
+   "goal": "Measure and fix N+1.",
+   "steps": [
+    "Seed 200 orders across 20 customers.",
+    "Use `assertNumQueries` to measure the list endpoint.",
+    "Add select_related/prefetch_related until the count is constant."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "Django architecture: projects, apps, URLs and views",
+   "minutes": 15,
+   "summary": "How a request flows through Django, and how projects and apps are organized.",
+   "simple": "Django is a \"batteries-included\" Python web framework. A **project** is your whole site (settings, root URLs). **Apps** are focused components inside it (users, orders). A request is matched by **URLs** to a **view**, which returns a response.",
+   "technical": "Django follows **MTV**: **Model** (data, ORM), **Template** (presentation), **View** (request handling logic) — the \"view\" plays the controller role from MVC.\n\nRequest lifecycle:\n1. The WSGI/ASGI server (gunicorn/uvicorn) hands the request to Django.\n2. **Middleware** runs in order (security, sessions, CSRF, auth) — each can modify the request or short-circuit.\n3. The **URL resolver** matches the path against `urlpatterns` (`path(\"orders/<int:pk>/\", views.order_detail)`).\n4. The **view** runs: reads the request, uses models, returns an `HttpResponse` (HTML via a template, or JSON).\n5. Middleware runs again in reverse on the response.\n\nCommands: `django-admin startproject config .`, `python manage.py startapp orders`, add the app to `INSTALLED_APPS`, `python manage.py runserver`. Each app has `models.py`, `views.py`, `urls.py` (you create it), `admin.py`, `tests.py`, `migrations/`.\n\n**Templates** (basics): `render(request, \"orders/list.html\", {\"orders\": qs})`; the template uses `{{ order.total }}` and `{% for %}`. Values are auto-escaped against XSS. For an API-only backend you'll mostly return JSON via DRF instead.",
+   "analogy": "The project is a shopping mall, apps are the individual shops, URLs are the mall directory that sends visitors to the right shop, and middleware is security at the entrance and exit.",
+   "example": {
+    "lang": "python",
+    "code": "# orders/views.py\nfrom django.http import JsonResponse\nfrom django.shortcuts import get_object_or_404\nfrom .models import Order\n\ndef order_detail(request, pk):\n    order = get_object_or_404(Order, pk=pk, customer=request.user)\n    return JsonResponse({\"id\": order.id, \"total\": str(order.total)})\n\n# orders/urls.py\nfrom django.urls import path\nfrom . import views\nurlpatterns = [path(\"<int:pk>/\", views.order_detail, name=\"order-detail\")]\n\n# config/urls.py\nfrom django.urls import include, path\nurlpatterns = [path(\"orders/\", include(\"orders.urls\"))]",
+    "explain": "`/orders/7/` is matched by the root URLconf, delegated to the app's URLconf, and the converter passes `pk=7` to the view. Filtering by `customer=request.user` prevents reading other people's orders."
+   },
+   "terms": [
+    [
+     "Project vs app",
+     "Site-wide config vs a reusable feature component."
+    ],
+    [
+     "MTV",
+     "Model–Template–View, Django's MVC variant."
+    ],
+    [
+     "Middleware",
+     "Hooks around every request/response."
+    ],
+    [
+     "URLconf",
+     "List of `path()` patterns mapping URLs to views."
+    ]
+   ],
+   "remember": [
+    "Request → middleware → URL resolver → view → response.",
+    "Split features into apps; register them in INSTALLED_APPS.",
+    "Always scope object lookups to the requesting user when data is private."
+   ],
+   "mistakes": [
+    "Forgetting to add the app to INSTALLED_APPS (models/migrations not found).",
+    "Putting business logic in templates.",
+    "`Order.objects.get(pk=pk)` without an ownership check (IDOR vulnerability)."
+   ],
+   "interview": [
+    "Walk through what happens when Django receives a request.",
+    "What is middleware used for?"
+   ],
+   "practice": [
+    "Can you build: a project with one app and a JSON endpoint?",
+    "Can you debug: a 404 for a URL you're sure you defined (include, trailing slash)."
+   ],
+   "id": "django-architecture"
+  },
+  {
+   "title": "Models, migrations and the ORM",
+   "minutes": 16,
+   "summary": "Define tables in Python, evolve the schema with migrations, and query efficiently.",
+   "simple": "A **model** is a Python class that maps to a database table. **Migrations** are versioned files that change the database schema to match your models. The **ORM** lets you query with Python instead of raw SQL.",
+   "technical": "```python\nclass Customer(models.Model):\n    email = models.EmailField(unique=True)\n    created_at = models.DateTimeField(auto_now_add=True)\n\nclass Order(models.Model):\n    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name=\"orders\")\n    total = models.DecimalField(max_digits=10, decimal_places=2)\n    status = models.CharField(max_length=20, choices=[(\"new\", \"New\"), (\"paid\", \"Paid\")], default=\"new\")\n    class Meta:\n        indexes = [models.Index(fields=[\"status\", \"created_at\"])]\n```\n`makemigrations` writes migration files from model changes; `migrate` applies them. Commit migrations to Git; they are part of the code.\n\n**QuerySets** are **lazy**: `Order.objects.filter(status=\"paid\").order_by(\"-id\")` runs no SQL until you iterate, slice, `len()`, or `list()` it. Chaining refines the query. Useful: `get()` (exactly one or raises), `exclude`, `values`, `exists()`, `count()`, `annotate(Sum(\"total\"))`, `Q(a) | Q(b)`, `F(\"stock\") - 1` (atomic in-DB update).\n\nThe **N+1 problem**: looping over orders and accessing `order.customer.email` runs one query per order. Fix with `select_related(\"customer\")` (SQL JOIN, for ForeignKey/OneToOne) or `prefetch_related(\"items\")` (second query, for reverse FK/ManyToMany). Inspect with `print(qs.query)` or django-debug-toolbar.\n\nUse `DecimalField` for money, `on_delete` deliberately (`CASCADE` deletes children, `PROTECT` blocks), and `transaction.atomic()` for multi-step writes.",
+   "analogy": "Models are architectural drawings, migrations are renovation work orders applied in sequence, and the ORM is a translator who turns your Python sentences into SQL.",
+   "example": {
+    "lang": "python",
+    "code": "from django.db.models import Sum, Count\n\n# N+1: 1 query for orders + 1 per order for customer\nfor o in Order.objects.all()[:50]:\n    print(o.customer.email)\n\n# 1 query with a JOIN\nfor o in Order.objects.select_related(\"customer\")[:50]:\n    print(o.customer.email)\n\n# aggregate in the database, not in Python\ntop = (Customer.objects\n       .annotate(spent=Sum(\"orders__total\"), n=Count(\"orders\"))\n       .filter(n__gt=0)\n       .order_by(\"-spent\")[:10])",
+    "explain": "select_related turns 51 queries into 1. annotate pushes the aggregation into SQL, so only 10 rows come back."
+   },
+   "terms": [
+    [
+     "Migration",
+     "Versioned schema change generated from models."
+    ],
+    [
+     "QuerySet",
+     "Lazy, chainable database query."
+    ],
+    [
+     "N+1 queries",
+     "One query per row for related data."
+    ],
+    [
+     "select_related / prefetch_related",
+     "JOIN-based vs separate-query related loading."
+    ],
+    [
+     "F expression",
+     "Reference a column value inside the database."
+    ]
+   ],
+   "remember": [
+    "makemigrations → review → migrate → commit.",
+    "QuerySets are lazy; watch when they execute.",
+    "select_related for FK, prefetch_related for many."
+   ],
+   "mistakes": [
+    "N+1 queries in list endpoints.",
+    "Editing applied migrations instead of adding new ones.",
+    "FloatField for money."
+   ],
+   "interview": [
+    "What is the N+1 problem and how do you fix it in Django?",
+    "Why are QuerySets lazy, and why does it matter?"
+   ],
+   "practice": [
+    "Can you use: count queries in a view with `assertNumQueries`?",
+    "Can you build: Customer/Order/OrderItem models with sensible on_delete choices?"
+   ],
+   "id": "django-models-orm"
+  },
+  {
+   "title": "Authentication and permissions",
+   "minutes": 14,
+   "summary": "Know who the user is, and decide what they may do.",
+   "simple": "**Authentication** answers \"who are you?\" (login, sessions, tokens). **Authorization/permissions** answer \"are you allowed to do this?\". Django ships both.",
+   "technical": "`django.contrib.auth` provides the `User` model, password hashing (PBKDF2 by default; passwords are never stored in plain text), login/logout, and groups/permissions. Start projects with a **custom user model** (`AUTH_USER_MODEL = \"users.User\"`, subclassing `AbstractUser`) — switching later is painful.\n\nSession auth (classic web): after login, Django stores a session id in a cookie; `AuthenticationMiddleware` sets `request.user` (an `AnonymousUser` if not logged in). `@login_required` protects function views; `LoginRequiredMixin` protects class views.\n\nPermissions: each model gets add/change/delete/view permissions; `user.has_perm(\"orders.change_order\")`. Groups bundle permissions. **Object-level** rules (\"only the owner may edit this order\") are written in your code — e.g. filtering querysets by owner or DRF permission classes.\n\nRules of thumb: authenticate at the edge, authorize on every object access, deny by default, and return 404 rather than 403 when revealing existence would leak information.",
+   "analogy": "Authentication is showing your ID at the office entrance. Authorization is whether your badge opens the server room door. Being inside the building doesn't mean you can enter every room.",
+   "example": {
+    "lang": "python",
+    "code": "# users/models.py\nfrom django.contrib.auth.models import AbstractUser\nclass User(AbstractUser):\n    pass                       # add fields later without pain\n\n# settings.py\nAUTH_USER_MODEL = \"users.User\"\n\n# orders/views.py\nfrom django.contrib.auth.decorators import login_required, permission_required\n\n@login_required\ndef my_orders(request):\n    orders = request.user.orders.all()        # object-level: own orders only\n    ...\n\n@permission_required(\"orders.change_order\", raise_exception=True)\ndef refund(request, pk): ...",
+    "explain": "A custom user model from day one; `login_required` handles authentication; ownership filtering and model permissions handle authorization."
+   },
+   "terms": [
+    [
+     "Authentication",
+     "Verifying identity."
+    ],
+    [
+     "Authorization",
+     "Checking allowed actions."
+    ],
+    [
+     "AUTH_USER_MODEL",
+     "Setting that points to your user model."
+    ],
+    [
+     "Password hashing",
+     "One-way, salted storage of passwords."
+    ],
+    [
+     "Object-level permission",
+     "Rule about a specific record, e.g. ownership."
+    ]
+   ],
+   "remember": [
+    "AuthN = who; AuthZ = what they may do.",
+    "Use a custom user model from the start.",
+    "Check ownership on every object access."
+   ],
+   "mistakes": [
+    "Storing or logging plain-text passwords.",
+    "Checking permissions in the frontend only.",
+    "Switching to a custom user model mid-project."
+   ],
+   "interview": [
+    "Explain authentication vs authorization with an example.",
+    "How does Django store passwords?"
+   ],
+   "practice": [
+    "Can you build: an endpoint where users can only see their own records?",
+    "Can you debug: `request.user` is AnonymousUser even after login (middleware order, cookie domain)."
+   ],
+   "id": "django-auth-permissions"
+  },
+  {
+   "title": "DRF serializers",
+   "minutes": 15,
+   "summary": "Convert models to JSON and validate incoming data.",
+   "simple": "Django REST Framework (DRF) is the standard toolkit for building APIs with Django. **Serializers** turn model instances into JSON-ready data and turn incoming JSON into validated Python data.",
+   "technical": "```python\nclass OrderSerializer(serializers.ModelSerializer):\n    customer_email = serializers.EmailField(source=\"customer.email\", read_only=True)\n    class Meta:\n        model = Order\n        fields = [\"id\", \"customer_email\", \"total\", \"status\", \"created_at\"]\n        read_only_fields = [\"id\", \"status\", \"created_at\"]\n\n    def validate_total(self, value):\n        if value <= 0:\n            raise serializers.ValidationError(\"Total must be positive.\")\n        return value\n```\n- **Output**: `OrderSerializer(order).data` or `OrderSerializer(qs, many=True).data`.\n- **Input**: `s = OrderSerializer(data=request.data)`, `s.is_valid(raise_exception=True)` (returns 400 with field errors), then `s.save(customer=request.user)` calls `create()` or `update()`.\n- Validation order: field-level types → `validate_<field>` → `validate(self, attrs)` for cross-field rules.\n\nAlways list `fields` explicitly — `fields = \"__all__\"` can leak internal columns and let clients write fields they shouldn't. Use separate serializers for read vs write when shapes differ. Nested serializers + `select_related/prefetch_related` in the view avoid N+1.",
+   "analogy": "A serializer is customs at the border: outbound, it packs the model into a standard parcel (JSON); inbound, it inspects every parcel and rejects anything that doesn't meet the rules before it enters the country (database).",
+   "example": {
+    "lang": "python",
+    "code": "from rest_framework import serializers\nfrom .models import Order\n\nclass OrderCreateSerializer(serializers.ModelSerializer):\n    class Meta:\n        model = Order\n        fields = [\"total\"]\n\n    def validate(self, attrs):\n        if attrs[\"total\"] > 10_000:\n            raise serializers.ValidationError(\"Orders over 10,000 need manual approval.\")\n        return attrs\n\n# in a view\ns = OrderCreateSerializer(data={\"total\": \"-5\"})\ns.is_valid()        # False\nprint(s.errors)     # {'total': ['Ensure this value is greater than or equal to 0.'] ...}",
+    "explain": "The client may only send `total`; owner, status and id are set server-side. Validation errors become a structured 400 response."
+   },
+   "terms": [
+    [
+     "Serializer",
+     "Converts and validates between Python objects and primitive data."
+    ],
+    [
+     "ModelSerializer",
+     "Serializer generated from a model."
+    ],
+    [
+     "is_valid()",
+     "Runs validation and fills `errors` or `validated_data`."
+    ],
+    [
+     "read_only_fields",
+     "Fields shown in output but ignored on input."
+    ]
+   ],
+   "remember": [
+    "Explicit `fields`, never `__all__` on public APIs.",
+    "Set ownership/status server-side in `save()`.",
+    "Field → validate_field → validate."
+   ],
+   "mistakes": [
+    "Mass assignment: letting clients set `is_staff` or `owner`.",
+    "Validation logic copied into every view.",
+    "Nested serializers without prefetching (N+1)."
+   ],
+   "interview": [
+    "What does `is_valid()` do and what happens on failure?",
+    "Why is `fields = '__all__'` risky?"
+   ],
+   "practice": [
+    "Can you build: separate read and write serializers for Order?",
+    "Can you debug: 'This field is required' for a field you set in the view (pass it to save, mark read-only)."
+   ],
+   "id": "django-drf-serializers"
+  },
+  {
+   "title": "APIView, GenericAPIView, ViewSets and routers",
+   "minutes": 16,
+   "summary": "DRF's view layers, from explicit to highly automated.",
+   "simple": "DRF offers several view styles. **APIView** gives full control; **generic views** and **ViewSets** remove boilerplate for standard CRUD; **routers** generate URLs for ViewSets.",
+   "technical": "- **APIView**: write `get`, `post`, etc. yourself. DRF adds request parsing (`request.data`), content negotiation, authentication, permissions and throttling.\n- **GenericAPIView + mixins**: set `queryset` and `serializer_class`; get `ListCreateAPIView`, `RetrieveUpdateDestroyAPIView` for free. Override `get_queryset()` (e.g. filter by user) and `perform_create()` (e.g. set owner).\n- **ViewSet / ModelViewSet**: groups list/create/retrieve/update/partial_update/destroy in one class. `@action(detail=True, methods=[\"post\"])` adds custom endpoints like `/orders/7/cancel/`.\n- **Routers**: `router.register(\"orders\", OrderViewSet, basename=\"order\")` generates `/orders/` and `/orders/{pk}/`.\n\nChoose the least magic that fits: ModelViewSet for plain CRUD resources, generic views for a subset, APIView for non-CRUD operations (e.g. a \"checkout\" workflow).",
+   "analogy": "APIView is cooking from scratch. Generic views are a meal kit. ModelViewSet plus a router is ordering the set menu: fast and consistent, as long as you want what's on it.",
+   "example": {
+    "lang": "python",
+    "code": "from rest_framework import viewsets, permissions\nfrom rest_framework.decorators import action\nfrom rest_framework.response import Response\nfrom rest_framework.routers import DefaultRouter\n\nclass OrderViewSet(viewsets.ModelViewSet):\n    serializer_class = OrderSerializer\n    permission_classes = [permissions.IsAuthenticated]\n\n    def get_queryset(self):\n        return Order.objects.filter(customer=self.request.user).select_related(\"customer\")\n\n    def perform_create(self, serializer):\n        serializer.save(customer=self.request.user)\n\n    @action(detail=True, methods=[\"post\"])\n    def cancel(self, request, pk=None):\n        order = self.get_object()\n        order.status = \"cancelled\"\n        order.save(update_fields=[\"status\"])\n        return Response({\"status\": order.status})\n\nrouter = DefaultRouter()\nrouter.register(\"orders\", OrderViewSet, basename=\"order\")\nurlpatterns = router.urls",
+    "explain": "Six CRUD endpoints plus `/orders/{pk}/cancel/`. Scoping `get_queryset` to the user protects list, retrieve, update and delete at once."
+   },
+   "terms": [
+    [
+     "APIView",
+     "DRF's base class with full manual control."
+    ],
+    [
+     "GenericAPIView",
+     "Adds queryset/serializer helpers and pagination."
+    ],
+    [
+     "ModelViewSet",
+     "Full CRUD actions in one class."
+    ],
+    [
+     "Router",
+     "Auto-generates URL patterns for ViewSets."
+    ],
+    [
+     "@action",
+     "Custom route on a ViewSet."
+    ]
+   ],
+   "remember": [
+    "Scope `get_queryset()` to the user for private data.",
+    "Set server-owned fields in `perform_create`.",
+    "Use @action for verbs that aren't CRUD."
+   ],
+   "mistakes": [
+    "`queryset = Order.objects.all()` on a private resource.",
+    "Business logic scattered across serializers, views and models with no plan.",
+    "ModelViewSet exposing delete when it shouldn't (use specific mixins)."
+   ],
+   "interview": [
+    "When would you use APIView instead of a ModelViewSet?",
+    "How does a router build URLs?"
+   ],
+   "practice": [
+    "Can you build: a ModelViewSet with a custom `@action`?",
+    "Can you debug: users can see each other's records in the list endpoint."
+   ],
+   "id": "django-views-routers"
+  },
+  {
+   "title": "Pagination, filtering, throttling, JWT, testing and docs",
+   "minutes": 16,
+   "summary": "The production features every DRF API needs.",
+   "simple": "Real APIs must page through large results, filter, limit abuse, authenticate stateless clients with tokens (often JWT), be tested, and be documented.",
+   "technical": "**Pagination** (settings `DEFAULT_PAGINATION_CLASS`): `PageNumberPagination` (`?page=2`), `LimitOffsetPagination` (`?limit=20&offset=40`), `CursorPagination` (stable ordering, efficient for large/real-time tables, no page jumps).\n\n**Filtering**: `django-filter` with `filterset_fields = [\"status\"]`, plus `SearchFilter` (`?search=`) and `OrderingFilter` (`?ordering=-created_at`). Filtering happens in SQL — index the columns you filter on.\n\n**Throttling**: `AnonRateThrottle`, `UserRateThrottle`, `ScopedRateThrottle` with rates like `\"100/hour\"`. Exceeding returns **429 Too Many Requests**. Throttle state lives in the cache (use Redis in production).\n\n**JWT** (via `djangorestframework-simplejwt`): client posts credentials to `/api/token/`, receives a short-lived **access** token and a longer **refresh** token, and sends `Authorization: Bearer <access>`. The server verifies the signature without a DB session lookup. A JWT is **signed, not encrypted** — anyone can decode its payload, so never put secrets in it. Keep access tokens short-lived; revoke via refresh-token blacklisting.\n\n**Testing**: `APITestCase` + `APIClient`: `self.client.force_authenticate(user)`, `self.client.post(url, data, format=\"json\")`, assert status code and body. Test permissions (other users get 404/403), validation (400) and happy paths.\n\n**Docs**: `drf-spectacular` generates an OpenAPI schema and Swagger/Redoc UI from your views and serializers.",
+   "analogy": "Pagination is serving a buffet in trays instead of dumping all the food on one table. Throttling is the bouncer limiting how fast one person can come back. A JWT is a stamped wristband: staff can check the stamp is genuine without calling the front desk.",
+   "example": {
+    "lang": "python",
+    "code": "# settings.py\nREST_FRAMEWORK = {\n    \"DEFAULT_AUTHENTICATION_CLASSES\": [\"rest_framework_simplejwt.authentication.JWTAuthentication\"],\n    \"DEFAULT_PERMISSION_CLASSES\": [\"rest_framework.permissions.IsAuthenticated\"],\n    \"DEFAULT_PAGINATION_CLASS\": \"rest_framework.pagination.PageNumberPagination\",\n    \"PAGE_SIZE\": 20,\n    \"DEFAULT_THROTTLE_CLASSES\": [\"rest_framework.throttling.UserRateThrottle\"],\n    \"DEFAULT_THROTTLE_RATES\": {\"user\": \"1000/hour\"},\n}\n\n# tests/test_orders.py\nfrom rest_framework.test import APITestCase\n\nclass OrderApiTests(APITestCase):\n    def test_user_cannot_see_others_orders(self):\n        mine, other = make_user(\"a\"), make_user(\"b\")\n        order = Order.objects.create(customer=other, total=10)\n        self.client.force_authenticate(mine)\n        res = self.client.get(f\"/orders/{order.id}/\")\n        self.assertEqual(res.status_code, 404)",
+    "explain": "Secure defaults are set globally (authenticated, paginated, throttled), and the test locks in the most important rule: no access to other users' data."
+   },
+   "terms": [
+    [
+     "Cursor pagination",
+     "Opaque cursor-based paging; stable under inserts."
+    ],
+    [
+     "Throttling",
+     "Rate limiting; 429 when exceeded."
+    ],
+    [
+     "JWT",
+     "Signed token with claims; verified without server-side session."
+    ],
+    [
+     "Access vs refresh token",
+     "Short-lived credential vs token used to get new ones."
+    ],
+    [
+     "OpenAPI",
+     "Machine-readable API description."
+    ]
+   ],
+   "remember": [
+    "Set secure defaults in REST_FRAMEWORK settings.",
+    "JWT payloads are readable; signed ≠ encrypted.",
+    "Test permissions, not just happy paths."
+   ],
+   "mistakes": [
+    "Unpaginated list endpoints that return 100k rows.",
+    "Long-lived access tokens stored insecurely.",
+    "Only testing with a superuser."
+   ],
+   "interview": [
+    "How does JWT authentication work end to end?",
+    "Page-number vs cursor pagination: trade-offs?"
+   ],
+   "practice": [
+    "Can you build: a filtered, paginated, throttled endpoint with OpenAPI docs?",
+    "Can you debug: every request returns 401 after adding JWT (missing `Bearer` prefix or expired token)."
+   ],
+   "id": "django-api-features"
+  }
+ ]
+}

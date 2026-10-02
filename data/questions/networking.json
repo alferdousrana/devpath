@@ -1,0 +1,210 @@
+[
+ {
+  "topic": "Private IPs",
+  "lesson": "networking-ip",
+  "difficulty": "easy",
+  "question": "Which address is in a private (RFC 1918) range?",
+  "options": [
+   "172.20.4.1",
+   "203.0.113.5",
+   "1.1.1.1",
+   "8.8.8.8"
+  ],
+  "correctAnswer": 0,
+  "explanation": "172.16.0.0/12 covers 172.16.x.x through 172.31.x.x.",
+  "id": "networking-q01",
+  "module": "networking"
+ },
+ {
+  "topic": "Loopback",
+  "lesson": "networking-ip",
+  "difficulty": "medium",
+  "question": "A dev server runs with `--bind 127.0.0.1:8000`. Can your phone on the same Wi-Fi reach it?",
+  "options": [
+   "Only over IPv6",
+   "No; loopback is only reachable from the same machine. Bind to 0.0.0.0 (and allow the firewall)",
+   "Only with HTTPS",
+   "Yes"
+  ],
+  "correctAnswer": 1,
+  "explanation": "0.0.0.0 listens on all interfaces, including the Wi-Fi one.",
+  "id": "networking-q02",
+  "module": "networking"
+ },
+ {
+  "topic": "IPv6",
+  "lesson": "networking-ip",
+  "difficulty": "easy",
+  "question": "What is the IPv6 loopback address?",
+  "options": [
+   "::1",
+   "fe80::",
+   "0.0.0.0",
+   "127.0.0.1"
+  ],
+  "correctAnswer": 0,
+  "explanation": "`::1` is IPv6's equivalent of 127.0.0.1.",
+  "id": "networking-q03",
+  "module": "networking"
+ },
+ {
+  "topic": "CIDR",
+  "lesson": "networking-subnets",
+  "difficulty": "medium",
+  "question": "How many total addresses does a /26 contain?",
+  "options": [
+   "32",
+   "256",
+   "26",
+   "64"
+  ],
+  "correctAnswer": 3,
+  "explanation": "2^(32−26) = 2^6 = 64 (62 usable hosts).",
+  "id": "networking-q04",
+  "module": "networking"
+ },
+ {
+  "topic": "CIDR",
+  "lesson": "networking-subnets",
+  "difficulty": "hard",
+  "question": "Is 192.168.10.130 inside 192.168.10.128/25?",
+  "options": [
+   "Yes, /25 splits the /24 into .0–.127 and .128–.255",
+   "Only if the gateway allows it",
+   "Can't be determined",
+   "No"
+  ],
+  "correctAnswer": 0,
+  "explanation": "A /25 has 128 addresses; .128/25 covers .128–.255.",
+  "id": "networking-q05",
+  "module": "networking"
+ },
+ {
+  "topic": "Gateway",
+  "lesson": "networking-subnets",
+  "difficulty": "medium",
+  "question": "Your host sends a packet to an IP outside its subnet. Where does it go first?",
+  "options": [
+   "To the default gateway (router)",
+   "To the DNS server",
+   "Directly to the destination",
+   "It's dropped"
+  ],
+  "correctAnswer": 0,
+  "explanation": "The routing table's default route points to the gateway.",
+  "id": "networking-q06",
+  "module": "networking"
+ },
+ {
+  "topic": "Ports",
+  "lesson": "networking-ports",
+  "difficulty": "easy",
+  "question": "Which port does PostgreSQL use by default?",
+  "options": [
+   "27017",
+   "6379",
+   "3306",
+   "5432"
+  ],
+  "correctAnswer": 3,
+  "explanation": "3306 MySQL, 6379 Redis, 27017 MongoDB.",
+  "id": "networking-q07",
+  "module": "networking"
+ },
+ {
+  "topic": "Ports",
+  "lesson": "networking-ports",
+  "difficulty": "medium",
+  "question": "How can a web server on port 443 handle thousands of simultaneous clients?",
+  "options": [
+   "It handles one at a time very fast",
+   "Port 443 is special",
+   "Each connection is identified by the full 5-tuple; clients use different source IPs/ports",
+   "It opens a new port per client"
+  ],
+  "correctAnswer": 2,
+  "explanation": "The listening port is shared; each accepted connection is a distinct socket.",
+  "id": "networking-q08",
+  "module": "networking"
+ },
+ {
+  "topic": "TCP vs UDP",
+  "lesson": "networking-tcp-udp",
+  "difficulty": "easy",
+  "question": "Which protocol guarantees ordered, reliable delivery?",
+  "options": [
+   "UDP",
+   "Both",
+   "ICMP",
+   "TCP"
+  ],
+  "correctAnswer": 3,
+  "explanation": "TCP uses sequence numbers, ACKs and retransmission.",
+  "id": "networking-q09",
+  "module": "networking"
+ },
+ {
+  "topic": "TCP vs UDP",
+  "lesson": "networking-tcp-udp",
+  "difficulty": "medium",
+  "question": "Why do live video calls usually use UDP (or QUIC) rather than plain TCP?",
+  "options": [
+   "UDP has bigger packets",
+   "A retransmitted, late packet is useless for live media; TCP's in-order delivery would stall the stream",
+   "TCP can't carry video",
+   "UDP is encrypted"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Low latency matters more than perfect delivery; codecs conceal small losses.",
+  "id": "networking-q10",
+  "module": "networking"
+ },
+ {
+  "topic": "TCP",
+  "lesson": "networking-tcp-udp",
+  "difficulty": "medium",
+  "question": "What does TCP flow control prevent?",
+  "options": [
+   "A fast sender overwhelming a slow receiver's buffer",
+   "Out-of-order IP addresses",
+   "DNS failures",
+   "Packet loss on the internet"
+  ],
+  "correctAnswer": 0,
+  "explanation": "The receiver advertises a window; congestion control (separate) protects the network.",
+  "id": "networking-q11",
+  "module": "networking"
+ },
+ {
+  "topic": "TCP",
+  "lesson": "networking-tcp-udp",
+  "difficulty": "easy",
+  "question": "What are the three steps of the TCP handshake?",
+  "options": [
+   "SYN, SYN-ACK, ACK",
+   "GET, POST, ACK",
+   "SYN, FIN, RST",
+   "HELLO, KEY, DONE"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Both sides agree on initial sequence numbers before data flows.",
+  "id": "networking-q12",
+  "module": "networking"
+ },
+ {
+  "topic": "Troubleshooting",
+  "lesson": "networking-tcp-udp",
+  "difficulty": "hard",
+  "question": "`nc -zv 10.0.2.15 5432` returns 'Connection refused' quickly. What does it suggest?",
+  "options": [
+   "The cable is unplugged",
+   "DNS is broken",
+   "The host is reachable but nothing is listening on that port/interface (or it actively rejects)",
+   "A firewall is silently dropping packets"
+  ],
+  "correctAnswer": 2,
+  "explanation": "A silent drop causes a timeout instead. Check `ss -ltnp` and the service's listen address.",
+  "id": "networking-q13",
+  "module": "networking"
+ }
+]

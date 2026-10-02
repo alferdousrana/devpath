@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>DevPath · AI / Backend Engineer track</title>
+  <meta name="description" content="A personal, offline-first learning system for becoming an AI/Backend engineer: lessons, MCQs, exams, logic and coding practice, spaced review.">
+  <meta name="theme-color" content="#0D1222">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <script>document.documentElement.dataset.theme = localStorage.getItem("devpath:theme") || "dark";</script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main-col">
+      <header class="topbar">
+        <a class="brand mobile-only" href="#/dashboard" aria-label="DevPath home"><span class="brand-mark" aria-hidden="true"></span><span>DevPath</span></a>
+        <form class="search" id="searchForm" role="search">
+          <label for="searchInput" class="sr-only">Search lessons, concepts and questions</label>
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5"/></svg>
+          <input id="searchInput" type="search" placeholder="Search lessons, concepts, questions" autocomplete="off" maxlength="80">
+        </form>
+        <a class="icon-btn mobile-search" href="#/search" aria-label="Search"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-5-5"/></svg></a>
+        <a class="sync-pill" id="syncPill" href="#/sync" data-state="idle" aria-live="polite"><i aria-hidden="true"></i><span>Online</span></a>
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle theme"></button>
+      </header>
+      <main id="main" tabindex="-1">
+        <div id="boot" class="boot"><div class="blocks lg loading" aria-label="Loading"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      </main>
+    </div>
+    <nav class="bottomnav" id="bottomnav" aria-label="Main"></nav>
+  </div>
+  <div id="sheet" class="sheet"></div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <noscript><p style="padding:2rem">DevPath needs JavaScript enabled.</p></noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

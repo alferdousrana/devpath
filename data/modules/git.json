@@ -1,0 +1,339 @@
+{
+ "id": "git",
+ "trackId": "backend",
+ "title": "Git & GitHub",
+ "tagline": "Version control and collaboration: the backbone of every engineering team.",
+ "overview": "Git records the history of your code so you can experiment safely, find when a bug was introduced, and collaborate without overwriting each other. GitHub adds pull requests, code review and CI.\n\nYou'll learn the everyday commit loop, branching and merging, syncing with remotes, rebasing your own branches cleanly, keeping secrets out of the repo, and resolving conflicts without fear.",
+ "objectives": [
+  "Use the working tree / staging / commit model deliberately.",
+  "Branch, merge, and explain fast-forward vs merge commits.",
+  "Sync with GitHub using fetch, pull and push, and open pull requests.",
+  "Rebase personal branches safely and know when not to.",
+  "Write a correct .gitignore and resolve merge conflicts."
+ ],
+ "concepts": [
+  [
+   "Commit",
+   "An immutable snapshot with a SHA ID."
+  ],
+  [
+   "Branch",
+   "A movable pointer to a commit."
+  ],
+  [
+   "Remote",
+   "Another copy of the repo, e.g. origin on GitHub."
+  ],
+  [
+   "Rebase",
+   "Replaying commits on a new base."
+  ],
+  [
+   "Conflict",
+   "Overlapping edits Git refuses to auto-merge."
+  ]
+ ],
+ "notes": [
+  "Commit early and often in small, coherent units.",
+  "`git status` and `git log --oneline --graph` are your map.",
+  "Secrets never go into Git. Use `.env` + .gitignore from day one."
+ ],
+ "checkpoints": {
+  "explain": [
+   "Staging area vs working tree",
+   "Merge vs rebase trade-offs",
+   "Why a pushed secret must be rotated"
+  ],
+  "use": [
+   "Branch → commit → push → PR",
+   "Interactive rebase to clean up commits",
+   "git rm --cached"
+  ],
+  "debug": [
+   "A rejected push",
+   "A merge conflict",
+   "Detached HEAD after checking out a commit"
+  ],
+  "build": [
+   "This app's repository with clean history and a CI-ready .gitignore"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Conflict drill",
+   "goal": "Create and resolve a conflict on purpose.",
+   "steps": [
+    "`git init` a repo, commit `config.py` with `TIMEOUT = 30`.",
+    "Branch `a`: change to 45, commit. Switch to main: change to 60, commit.",
+    "Merge `a` into main, resolve to 60 with a comment explaining why, commit.",
+    "Inspect `git log --graph --oneline`."
+   ]
+  },
+  {
+   "title": "Publish this project",
+   "goal": "Get your DevPath fork on GitHub.",
+   "steps": [
+    "Create a GitHub repo and add it as `origin`.",
+    "Add a .gitignore (no `.env`, no `.venv`).",
+    "Push main, then create a branch, change the README, push and open a PR to yourself.",
+    "Merge the PR on GitHub and `git pull` locally."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "Git vs GitHub, repositories and the commit cycle",
+   "minutes": 15,
+   "summary": "init, clone, status, add, commit and log: the everyday loop.",
+   "simple": "**Git** is a version-control tool on your computer that records snapshots of your project. **GitHub** is a website that hosts Git repositories and adds collaboration (pull requests, issues, CI). You can use Git without GitHub; not the reverse.",
+   "technical": "A **repository** is your project plus a hidden `.git` directory holding its full history. Git tracks content through three areas:\n\n1. **Working tree**: the files you edit.\n2. **Staging area (index)**: what will go into the next commit. `git add` puts changes here.\n3. **Repository**: committed snapshots. `git commit` records the staged snapshot with a message, author and parent.\n\nEach commit has an ID (a SHA hash) and points to its parent(s), forming a history graph.\n\n- `git init` turns the current directory into a repository. `git clone URL` copies an existing one, including history.\n- `git status` shows modified, staged and untracked files. Run it constantly.\n- `git add file` / `git add -p` (interactively choose hunks). `git diff` shows unstaged changes; `git diff --staged` shows what will be committed.\n- `git commit -m \"Add user signup endpoint\"`. Messages: imperative mood, say what and why.\n- `git log --oneline --graph` shows history compactly.\n\nCommit small, coherent changes. A commit that mixes a bug fix, a refactor and formatting is hard to review and hard to revert.",
+   "analogy": "Staging is packing a box before shipping: you choose exactly which items go in (`add`), then seal and label the box (`commit`). The warehouse shelf of sealed, labeled boxes is your history.",
+   "example": {
+    "lang": "bash",
+    "code": "$ git init demo && cd demo\n$ echo \"# Demo API\" > README.md\n$ git status --short\n?? README.md\n$ git add README.md\n$ git commit -m \"Add README\"\n[main (root-commit) 3f2a1c9] Add README\n$ echo \"print('hi')\" > app.py\n$ git add app.py && git commit -m \"Add entry point\"\n$ git log --oneline\n8d41e07 Add entry point\n3f2a1c9 Add README",
+    "explain": "`??` means untracked. Each commit is a snapshot with its own hash; the log shows newest first."
+   },
+   "terms": [
+    [
+     "Repository",
+     "Project files + `.git` history."
+    ],
+    [
+     "Working tree",
+     "Files as they are on disk now."
+    ],
+    [
+     "Staging area",
+     "The snapshot being prepared for the next commit."
+    ],
+    [
+     "Commit",
+     "Immutable snapshot with message, author, parent and SHA ID."
+    ],
+    [
+     "Untracked",
+     "A file Git has never been told to track."
+    ]
+   ],
+   "remember": [
+    "Git = tool, GitHub = hosting + collaboration.",
+    "Edit → `add` (stage) → `commit`.",
+    "`git status` before and after everything."
+   ],
+   "mistakes": [
+    "`git add .` blindly, committing secrets or build output.",
+    "Giant commits with messages like 'fix stuff'.",
+    "Confusing `git diff` (unstaged) with `git diff --staged`."
+   ],
+   "interview": [
+    "What is the staging area for?",
+    "What is the difference between Git and GitHub?"
+   ],
+   "practice": [
+    "Can you explain: the three areas a change moves through?",
+    "Can you use: stage only part of a file with `git add -p`."
+   ],
+   "id": "git-basics"
+  },
+  {
+   "title": "Branches and merging",
+   "minutes": 15,
+   "summary": "Create branches, switch between them and merge work back.",
+   "simple": "A **branch** is a movable label pointing at a commit. You create a branch to work on a feature without disturbing `main`, then **merge** it back when it's done.",
+   "technical": "Branches are cheap: just a pointer. `HEAD` points to the branch you're on. When you commit, the current branch's pointer moves forward.\n\n- `git switch -c feature/login` creates and switches (older: `git checkout -b`).\n- `git branch` lists branches; `git switch main` changes back.\n- `git merge feature/login` (while on main) integrates the branch.\n\nTwo kinds of merge:\n- **Fast-forward**: main hasn't moved since you branched, so Git just moves the main pointer forward. No new commit.\n- **Three-way merge**: both branches have new commits. Git finds the common ancestor and creates a **merge commit** with two parents.\n\nTypical team flow: short-lived feature branches off `main`, opened as pull requests, merged after review and CI. Delete merged branches: `git branch -d feature/login`.",
+   "analogy": "Branches are bookmarks in a choose-your-own-adventure book. Moving a bookmark is free; merging is writing a chapter that joins two storylines.",
+   "example": {
+    "lang": "bash",
+    "code": "$ git switch -c feature/health\n$ echo \"def health(): return 'ok'\" >> app.py\n$ git commit -am \"Add health check\"\n$ git switch main\n$ git merge feature/health\nUpdating 8d41e07..b12c3d4\nFast-forward\n app.py | 1 +\n$ git branch -d feature/health",
+    "explain": "main had no new commits, so the merge was a fast-forward: no merge commit was needed."
+   },
+   "terms": [
+    [
+     "Branch",
+     "A named pointer to a commit."
+    ],
+    [
+     "HEAD",
+     "Pointer to what you have checked out, usually a branch."
+    ],
+    [
+     "Fast-forward",
+     "Merge that just moves the pointer forward."
+    ],
+    [
+     "Merge commit",
+     "A commit with two parents joining histories."
+    ]
+   ],
+   "remember": [
+    "Branches are cheap pointers; use one per feature or fix.",
+    "Fast-forward = no merge commit; diverged = merge commit.",
+    "Keep branches short-lived to avoid painful merges."
+   ],
+   "mistakes": [
+    "Working directly on main.",
+    "Long-lived branches that drift for weeks.",
+    "Switching branches with uncommitted changes and getting confused (commit or `git stash` first)."
+   ],
+   "interview": [
+    "When does Git create a merge commit?",
+    "What does HEAD point to?"
+   ],
+   "practice": [
+    "Can you use: create a branch, commit twice, and merge with a merge commit?",
+    "Can you explain: why branches cost almost nothing in Git."
+   ],
+   "id": "git-branching"
+  },
+  {
+   "title": "Remotes: push, pull, fetch and pull requests",
+   "minutes": 15,
+   "summary": "Synchronize with GitHub and collaborate through pull requests.",
+   "simple": "A **remote** is another copy of the repository, usually on GitHub, named `origin`. You **push** your commits up, and **fetch/pull** others' commits down.",
+   "technical": "- `git remote -v` lists remotes. `git remote add origin git@github.com:you/api.git` adds one.\n- `git push -u origin feature/login` uploads a branch and sets its upstream so later `git push` needs no arguments.\n- `git fetch` downloads new commits into **remote-tracking branches** (`origin/main`) **without** changing your files.\n- `git pull` = `git fetch` + integrate (merge, or rebase with `--rebase`) into your current branch.\n\nFetch is always safe; pull changes your working branch. `git log main..origin/main` shows what's new upstream before you pull.\n\nA **pull request (PR)** is a GitHub feature, not a Git command: you push a branch and ask for it to be merged into `main`. The PR shows the diff, runs CI checks, and collects review comments. Good PRs are small, explain *why*, and pass tests.\n\n`git push` is rejected if the remote has commits you don't have. Fix it by pulling first. Never use `git push --force` on shared branches; if you must rewrite your own branch, use `--force-with-lease`, which refuses if someone else pushed.",
+   "analogy": "`fetch` is checking your mailbox and reading the letters. `pull` is reading them and immediately rearranging your desk according to what they say.",
+   "example": {
+    "lang": "bash",
+    "code": "$ git fetch origin\n$ git log --oneline main..origin/main\na91f0e2 Fix pagination bug\n$ git pull --rebase origin main\n$ git push -u origin feature/login\nremote: Create a pull request for 'feature/login' on GitHub by visiting:\nremote:   https://github.com/you/api/pull/new/feature/login",
+    "explain": "Inspect upstream first with fetch + log, then integrate. After pushing, GitHub suggests opening a PR."
+   },
+   "terms": [
+    [
+     "Remote",
+     "A named reference to another repository, e.g. origin."
+    ],
+    [
+     "Remote-tracking branch",
+     "Local read-only copy like `origin/main`."
+    ],
+    [
+     "Upstream",
+     "The remote branch your local branch pushes to/pulls from."
+    ],
+    [
+     "Pull request",
+     "GitHub's request-review-merge workflow for a branch."
+    ]
+   ],
+   "remember": [
+    "fetch = download only; pull = fetch + merge/rebase.",
+    "PRs are GitHub's, not Git's.",
+    "Never force-push shared branches; prefer `--force-with-lease`."
+   ],
+   "mistakes": [
+    "Thinking `git fetch` updates your files.",
+    "Force-pushing over teammates' work.",
+    "Huge PRs nobody can review."
+   ],
+   "interview": [
+    "Difference between fetch and pull?",
+    "Why is your push rejected and how do you fix it?"
+   ],
+   "practice": [
+    "Can you use: push a branch and open a PR?",
+    "Can you debug: 'Updates were rejected because the remote contains work that you do not have locally'."
+   ],
+   "id": "git-remotes"
+  },
+  {
+   "title": "Rebase basics",
+   "minutes": 12,
+   "summary": "Replay commits onto a new base for a linear history, and know when not to.",
+   "simple": "**Rebase** moves your branch's commits so they start from a newer commit, as if you had begun your work later. The result is a straight-line history instead of merge commits.",
+   "technical": "On `feature`, `git rebase main` takes each commit unique to `feature`, and re-applies it on top of `main`'s tip. The replayed commits get **new SHAs** — they are new commits with the same changes.\n\nMerge vs rebase:\n- **Merge** preserves exactly what happened, adding merge commits. Never rewrites history.\n- **Rebase** gives a clean linear history but rewrites your branch's commits.\n\nThe golden rule: **don't rebase commits that others have already based work on** (e.g. shared `main`). Rebasing your own unpushed or personal feature branch is fine.\n\n`git rebase -i HEAD~3` (interactive) lets you squash, reorder or reword your last three commits before opening a PR. If a conflict occurs during rebase: fix files, `git add`, `git rebase --continue` — or `git rebase --abort` to go back.",
+   "analogy": "Merge is writing \"meanwhile, in the other timeline…\" into the story. Rebase is rewriting your chapter so it starts after the latest events, as if it always had.",
+   "example": {
+    "lang": "bash",
+    "code": "$ git switch feature/search\n$ git rebase main\nSuccessfully rebased and updated refs/heads/feature/search.\n$ git log --oneline --graph -4\n* 7c0e2aa Add search endpoint     (new SHA)\n* a91f0e2 Fix pagination bug      (main)\n* 8d41e07 Add entry point\n$ git push --force-with-lease      # branch was pushed before; history changed",
+    "explain": "The feature commit now sits on top of main. Because its SHA changed, the remote branch needs a (safe) force push."
+   },
+   "terms": [
+    [
+     "Rebase",
+     "Re-apply commits on top of another base."
+    ],
+    [
+     "Interactive rebase",
+     "`-i`: squash, reword, reorder, drop commits."
+    ],
+    [
+     "Linear history",
+     "No merge commits; one straight line."
+    ],
+    [
+     "--force-with-lease",
+     "Force-push that fails if the remote changed unexpectedly."
+    ]
+   ],
+   "remember": [
+    "Rebase rewrites commits (new SHAs).",
+    "Never rebase shared/public history.",
+    "`--abort` gets you out of a rebase gone wrong."
+   ],
+   "mistakes": [
+    "Rebasing main or another shared branch.",
+    "Panicking mid-rebase instead of using --continue/--abort.",
+    "Plain `--force` after a rebase."
+   ],
+   "interview": [
+    "When would you choose rebase over merge?",
+    "Why does rebasing change commit hashes?"
+   ],
+   "practice": [
+    "Can you use: squash 3 messy commits into one with interactive rebase?",
+    "Can you explain: the golden rule of rebasing."
+   ],
+   "id": "git-rebase"
+  },
+  {
+   "title": ".gitignore and resolving conflicts",
+   "minutes": 14,
+   "summary": "Keep junk and secrets out of Git, and resolve merge conflicts calmly.",
+   "simple": "`.gitignore` lists files Git should not track, like virtual environments, build output and `.env` secrets. A **conflict** happens when two branches changed the same lines; Git stops and asks you to decide.",
+   "technical": "`.gitignore` patterns: `__pycache__/`, `*.pyc`, `.venv/`, `.env`, `node_modules/`, `*.log`, `!keep.log` (negation). It only affects **untracked** files: if a file is already committed, ignoring it does nothing until you `git rm --cached file`.\n\nIf you committed a secret, removing it in a new commit is **not enough** — it's still in history. Rotate (revoke) the secret immediately, then optionally purge history with `git filter-repo`.\n\nConflicts: Git marks the file:\n```text\n<<<<<<< HEAD\ntimeout = 30\n=======\ntimeout = 60\n>>>>>>> feature/slow-api\n```\nSteps: `git status` (shows \"both modified\") → edit the file to the correct final content and delete the markers → run tests → `git add file` → `git commit` (merge) or `git rebase --continue`. `git merge --abort` returns to before the merge.\n\nConflicts are not errors; they are Git refusing to guess. Read both sides and understand why each changed.",
+   "analogy": "A conflict is two editors changing the same sentence in a shared document. The software won't pick a winner; it highlights both versions and waits for the editor-in-chief (you).",
+   "example": {
+    "lang": "bash",
+    "code": "$ cat .gitignore\n.venv/\n__pycache__/\n*.pyc\n.env\ndb.sqlite3\n$ git merge feature/slow-api\nCONFLICT (content): Merge conflict in config.py\n$ git status --short\nUU config.py\n# edit config.py, keep timeout = 60, remove markers\n$ git add config.py && git commit --no-edit",
+    "explain": "`UU` = unmerged, both modified. After editing, `add` marks it resolved and the commit completes the merge."
+   },
+   "terms": [
+    [
+     ".gitignore",
+     "Patterns for files Git should not track."
+    ],
+    [
+     "git rm --cached",
+     "Stop tracking a file but keep it on disk."
+    ],
+    [
+     "Conflict markers",
+     "`<<<<<<<`, `=======`, `>>>>>>>` around competing changes."
+    ],
+    [
+     "merge --abort",
+     "Cancel an in-progress merge."
+    ]
+   ],
+   "remember": [
+    "Add `.env` to .gitignore before your first commit.",
+    "Ignoring doesn't untrack already-committed files.",
+    "Leaked secret → rotate it; deleting it later isn't enough."
+   ],
+   "mistakes": [
+    "Committing conflict markers.",
+    "Thinking a later commit removes a leaked secret from history.",
+    "Resolving by blindly choosing 'mine' without reading the other change."
+   ],
+   "interview": [
+    "How do you stop tracking a file that's already committed?",
+    "Walk through resolving a merge conflict."
+   ],
+   "practice": [
+    "Can you build: a sensible .gitignore for a Django + Docker project?",
+    "Can you debug: you added `.env` to .gitignore but it still shows in `git status` as modified."
+   ],
+   "id": "git-ignore-conflicts"
+  }
+ ]
+}

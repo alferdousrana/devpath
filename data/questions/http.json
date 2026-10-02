@@ -1,0 +1,178 @@
+[
+ {
+  "topic": "Messages",
+  "lesson": "http-request-response",
+  "difficulty": "easy",
+  "question": "Which header tells the server the request body is JSON?",
+  "options": [
+   "Host: json",
+   "User-Agent: json",
+   "Content-Type: application/json",
+   "Accept: application/json"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Content-Type describes the body being sent. Accept says what the client wants back.",
+  "id": "http-q01",
+  "module": "http"
+ },
+ {
+  "topic": "Messages",
+  "lesson": "http-request-response",
+  "difficulty": "medium",
+  "question": "What is the purpose of the `Host` header?",
+  "options": [
+   "Names the target domain so one IP can serve many sites (virtual hosting)",
+   "Identifies the client machine",
+   "Specifies the HTTP version",
+   "Sets the cookie domain"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Required in HTTP/1.1; reverse proxies route by it.",
+  "id": "http-q02",
+  "module": "http"
+ },
+ {
+  "topic": "Methods",
+  "lesson": "http-request-response",
+  "difficulty": "medium",
+  "question": "Which method do browsers send automatically as a CORS preflight?",
+  "options": [
+   "TRACE",
+   "CONNECT",
+   "OPTIONS",
+   "HEAD"
+  ],
+  "correctAnswer": 2,
+  "explanation": "The preflight asks whether the cross-origin request is allowed.",
+  "id": "http-q03",
+  "module": "http"
+ },
+ {
+  "topic": "Status",
+  "lesson": "http-status-cookies",
+  "difficulty": "easy",
+  "question": "Which class of status codes indicates a server-side error?",
+  "options": [
+   "4xx",
+   "3xx",
+   "5xx",
+   "2xx"
+  ],
+  "correctAnswer": 2,
+  "explanation": "5xx means the server failed; 4xx means the request was the problem.",
+  "id": "http-q04",
+  "module": "http"
+ },
+ {
+  "topic": "Cookies",
+  "lesson": "http-status-cookies",
+  "difficulty": "medium",
+  "question": "What does the `HttpOnly` cookie attribute do?",
+  "options": [
+   "Sends the cookie only over HTTP, not HTTPS",
+   "Makes the cookie expire on close",
+   "Allows cross-site sending",
+   "Prevents JavaScript from reading the cookie"
+  ],
+  "correctAnswer": 3,
+  "explanation": "It limits damage from XSS. `Secure` is the one that restricts to HTTPS.",
+  "id": "http-q05",
+  "module": "http"
+ },
+ {
+  "topic": "Sessions",
+  "lesson": "http-status-cookies",
+  "difficulty": "hard",
+  "question": "An advantage of server-side sessions over JWTs is…",
+  "options": [
+   "They're encrypted by default",
+   "Instant revocation: deleting the session logs the user out immediately",
+   "No database needed",
+   "They work without cookies"
+  ],
+  "correctAnswer": 1,
+  "explanation": "A JWT stays valid until it expires unless you add a denylist.",
+  "id": "http-q06",
+  "module": "http"
+ },
+ {
+  "topic": "TLS",
+  "lesson": "http-https-tls",
+  "difficulty": "medium",
+  "question": "What does a TLS certificate prove to the browser?",
+  "options": [
+   "The site is not malware",
+   "The server's public key belongs to the named domain, as vouched for by a trusted CA",
+   "The connection is fast",
+   "The user is logged in"
+  ],
+  "correctAnswer": 1,
+  "explanation": "It's identity, not trustworthiness of content.",
+  "id": "http-q07",
+  "module": "http"
+ },
+ {
+  "topic": "TLS",
+  "lesson": "http-https-tls",
+  "difficulty": "hard",
+  "question": "Why does TLS use symmetric encryption for the actual data?",
+  "options": [
+   "It's more secure than asymmetric",
+   "Browsers don't support asymmetric crypto",
+   "Certificates require it",
+   "Symmetric ciphers are much faster; asymmetric crypto is used only to authenticate and agree on keys"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Key agreement (ECDHE) + signatures, then AES-GCM/ChaCha20 for bulk data.",
+  "id": "http-q08",
+  "module": "http"
+ },
+ {
+  "topic": "Proxies",
+  "lesson": "http-https-tls",
+  "difficulty": "hard",
+  "question": "Behind an HTTPS load balancer, Django thinks requests are plain HTTP and generates http:// redirects. Fix?",
+  "options": [
+   "Disable HTTPS",
+   "Use HTTP/3",
+   "Configure the proxy to send X-Forwarded-Proto and set SECURE_PROXY_SSL_HEADER",
+   "Install a certificate on the Django container"
+  ],
+  "correctAnswer": 2,
+  "explanation": "TLS terminates at the proxy; Django must trust its forwarded-protocol header.",
+  "id": "http-q09",
+  "module": "http"
+ },
+ {
+  "topic": "Versions",
+  "lesson": "http-versions",
+  "difficulty": "medium",
+  "question": "What is HTTP/2's main improvement over HTTP/1.1?",
+  "options": [
+   "It uses UDP",
+   "It removes headers",
+   "New status codes",
+   "Multiplexing many requests over one connection with binary framing and header compression"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Semantics are unchanged.",
+  "id": "http-q10",
+  "module": "http"
+ },
+ {
+  "topic": "Versions",
+  "lesson": "http-versions",
+  "difficulty": "hard",
+  "question": "Why does HTTP/3 run over QUIC/UDP?",
+  "options": [
+   "To avoid TCP's head-of-line blocking across streams and enable faster handshakes and connection migration",
+   "Because TCP is deprecated",
+   "To drop TLS",
+   "UDP is more secure"
+  ],
+  "correctAnswer": 0,
+  "explanation": "QUIC implements reliability per stream, so one lost packet only stalls its own stream.",
+  "id": "http-q11",
+  "module": "http"
+ }
+]

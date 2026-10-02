@@ -1,0 +1,360 @@
+{
+ "id": "postgres",
+ "trackId": "backend",
+ "title": "PostgreSQL",
+ "tagline": "The relational database behind most serious backends.",
+ "overview": "PostgreSQL is reliable, standards-compliant and powerful. This module goes from the relational model through practical SQL to the parts that matter in production: JOINs and aggregation, indexing and query plans, transactions and concurrency, and wiring it to Django.\n\nPractice with `docker run --name pg -e POSTGRES_PASSWORD=dev -p 5432:5432 -d postgres:16` and `psql -h localhost -U postgres`.",
+ "objectives": [
+  "Design tables with keys and constraints.",
+  "Write correct SELECT/INSERT/UPDATE/DELETE, including upserts.",
+  "Use JOINs and GROUP BY without the classic traps.",
+  "Explain indexes, their costs, and read EXPLAIN ANALYZE.",
+  "Use transactions and locking to prevent race conditions.",
+  "Normalize schemas and connect PostgreSQL to Django."
+ ],
+ "concepts": [
+  [
+   "Relational model",
+   "Data in tables linked by keys."
+  ],
+  [
+   "Constraint",
+   "Rule enforced by the database."
+  ],
+  [
+   "JOIN",
+   "Combine rows across tables."
+  ],
+  [
+   "Index",
+   "Structure for fast lookup."
+  ],
+  [
+   "Transaction",
+   "All-or-nothing unit of work."
+  ],
+  [
+   "Query plan",
+   "How Postgres will execute a query."
+  ]
+ ],
+ "notes": [
+  "`\\d tablename` in psql shows columns, indexes and constraints.",
+  "Use EXPLAIN ANALYZE on real data volumes.",
+  "Never build SQL strings from user input."
+ ],
+ "checkpoints": {
+  "explain": [
+   "Why constraints belong in the DB",
+   "B-tree indexes and trade-offs",
+   "Isolation and lost updates"
+  ],
+  "use": [
+   "LEFT JOIN + GROUP BY reports",
+   "EXPLAIN ANALYZE",
+   "transaction.atomic + select_for_update"
+  ],
+  "debug": [
+   "Slow query on a growing table",
+   "Missing rows in a LEFT JOIN report",
+   "Overselling under concurrency"
+  ],
+  "build": [
+   "A normalized schema for an e-commerce backend"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Shop database",
+   "goal": "Design and query a real schema.",
+   "steps": [
+    "Create customers, products, orders, order_items with PKs, FKs and CHECKs.",
+    "Insert sample data (generate_series helps).",
+    "Write: revenue per month, top 5 products, customers with no orders.",
+    "Try to insert invalid data and watch constraints reject it."
+   ]
+  },
+  {
+   "title": "Index lab",
+   "goal": "See an index change a plan.",
+   "steps": [
+    "Insert 1M orders with generate_series.",
+    "EXPLAIN ANALYZE a query by customer_id ordered by created_at.",
+    "Add a composite index; compare plans and timings.",
+    "Insert 100k rows with and without three extra indexes; compare time."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "Relational model: tables, keys and constraints",
+   "minutes": 14,
+   "summary": "Tables, rows, columns, primary and foreign keys, and constraints that protect your data.",
+   "simple": "A relational database stores data in **tables** (rows and columns). **Keys** identify rows and link tables. **Constraints** are rules the database enforces so bad data can't get in, no matter which code writes it.",
+   "technical": "- **Table**: a set of rows with the same columns. Each **column** has a type: `integer`, `bigint`, `text`, `varchar(n)`, `numeric(10,2)` (exact decimal, for money), `boolean`, `timestamptz` (timestamp with time zone — prefer it), `jsonb`, `uuid`.\n- **Primary key (PK)**: uniquely identifies each row; implies `NOT NULL` + `UNIQUE` and creates an index. `id bigint GENERATED ALWAYS AS IDENTITY` or a `uuid`.\n- **Foreign key (FK)**: a column referencing another table's PK, enforcing **referential integrity** (no order for a nonexistent customer). `ON DELETE CASCADE | RESTRICT | SET NULL` defines what happens when the parent is deleted.\n- Other constraints: `NOT NULL`, `UNIQUE`, `CHECK (total >= 0)`, `DEFAULT now()`.\n\nRelationships: **one-to-many** (customer → orders: FK on orders), **many-to-many** (orders ↔ products: a join table `order_items` with two FKs), **one-to-one** (user → profile: FK with UNIQUE).\n\nWhy constraints in the database and not just in Python? Because data arrives from many paths: migrations, scripts, admin, a second service, concurrent requests. Only the database sees all of them, atomically. A `UNIQUE` constraint is the only reliable defense against two simultaneous signups with the same email.",
+   "analogy": "Tables are spreadsheets with strict rules: every row has an ID card (primary key), cross-references must point to real rows (foreign keys), and the spreadsheet itself refuses invalid entries (constraints) instead of trusting whoever types.",
+   "example": {
+    "lang": "sql",
+    "code": "CREATE TABLE customers (\n  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  email       text NOT NULL UNIQUE,\n  created_at  timestamptz NOT NULL DEFAULT now()\n);\n\nCREATE TABLE orders (\n  id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  customer_id  bigint NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,\n  total        numeric(10,2) NOT NULL CHECK (total >= 0),\n  status       text NOT NULL DEFAULT 'new' CHECK (status IN ('new','paid','cancelled')),\n  created_at   timestamptz NOT NULL DEFAULT now()\n);",
+    "explain": "Every rule (unique email, valid customer, non-negative total, allowed status) is enforced by PostgreSQL itself. Deleting a customer with orders is refused."
+   },
+   "terms": [
+    [
+     "Primary key",
+     "Unique, non-null row identifier."
+    ],
+    [
+     "Foreign key",
+     "Column referencing another table's key."
+    ],
+    [
+     "Referential integrity",
+     "References always point to existing rows."
+    ],
+    [
+     "CHECK constraint",
+     "Boolean rule each row must satisfy."
+    ],
+    [
+     "timestamptz",
+     "Timestamp stored in UTC, displayed with time zone."
+    ]
+   ],
+   "remember": [
+    "PK identifies, FK links, constraints protect.",
+    "Enforce invariants in the database, not only in app code.",
+    "numeric for money, timestamptz for time."
+   ],
+   "mistakes": [
+    "Checking uniqueness in Python only (race conditions).",
+    "`float` for money.",
+    "`timestamp` without time zone in multi-region apps."
+   ],
+   "interview": [
+    "Why put constraints in the DB if the app validates already?",
+    "How do you model a many-to-many relationship?"
+   ],
+   "practice": [
+    "Can you build: schema for users, posts, tags (many-to-many)?",
+    "Can you explain: what ON DELETE CASCADE vs RESTRICT does."
+   ],
+   "id": "postgres-relational"
+  },
+  {
+   "title": "SQL: SELECT, INSERT, UPDATE, DELETE",
+   "minutes": 14,
+   "summary": "Read and modify data with the four core statements.",
+   "simple": "SQL is the language for asking the database questions and changing data. Four statements cover most of it: `SELECT` (read), `INSERT` (add), `UPDATE` (change), `DELETE` (remove).",
+   "technical": "```sql\nSELECT id, email FROM customers\nWHERE created_at >= now() - interval '7 days'\nORDER BY created_at DESC\nLIMIT 20;\n```\nLogical order of evaluation: `FROM` → `WHERE` → `GROUP BY` → `HAVING` → `SELECT` → `ORDER BY` → `LIMIT`. That's why you can't use a SELECT alias in WHERE.\n\n- `NULL` means unknown: use `IS NULL` / `IS NOT NULL`; `= NULL` is never true.\n- Patterns: `WHERE email ILIKE '%@gmail.com'`; sets: `WHERE status IN ('new','paid')`; ranges: `BETWEEN`.\n- `INSERT INTO customers (email) VALUES ('a@x.io') RETURNING id;` — `RETURNING` gives generated values back.\n- Upsert: `INSERT ... ON CONFLICT (email) DO UPDATE SET ...` or `DO NOTHING`.\n- `UPDATE orders SET status = 'paid' WHERE id = 42;`\n- `DELETE FROM orders WHERE id = 42;`\n\nAn `UPDATE` or `DELETE` **without WHERE** affects every row. In a manual session, run the matching `SELECT` first, or wrap it in `BEGIN; ... ROLLBACK;` to check.\n\nFrom application code, **always use parameterized queries** (`cursor.execute(\"... WHERE email = %s\", [email])`). String-formatting user input into SQL is SQL injection.",
+   "analogy": "SELECT is asking a librarian for \"all books by this author, newest first, just ten\". UPDATE without WHERE is asking them to relabel every book in the building.",
+   "example": {
+    "lang": "sql",
+    "code": "INSERT INTO customers (email) VALUES ('ana@example.com') RETURNING id;\n-- id = 1\n\nINSERT INTO orders (customer_id, total) VALUES (1, 19.99), (1, 5.00);\n\nSELECT id, total, status FROM orders WHERE customer_id = 1 ORDER BY total DESC;\n--  id | total | status\n--   1 | 19.99 | new\n--   2 |  5.00 | new\n\nBEGIN;\nUPDATE orders SET status = 'paid' WHERE id = 1;\nSELECT status FROM orders WHERE id = 1;   -- paid\nCOMMIT;\n\nSELECT count(*) FROM customers WHERE deleted_at = NULL;  -- always 0! use IS NULL",
+    "explain": "RETURNING avoids a second query for the id. The last line is the classic NULL bug."
+   },
+   "terms": [
+    [
+     "WHERE",
+     "Filters rows."
+    ],
+    [
+     "RETURNING",
+     "Return values from INSERT/UPDATE/DELETE."
+    ],
+    [
+     "Upsert",
+     "Insert or update on conflict."
+    ],
+    [
+     "NULL",
+     "Unknown/missing value; compare with IS NULL."
+    ],
+    [
+     "Parameterized query",
+     "Values sent separately from SQL text."
+    ]
+   ],
+   "remember": [
+    "`IS NULL`, never `= NULL`.",
+    "UPDATE/DELETE: write the WHERE first.",
+    "Parameterize every query."
+   ],
+   "mistakes": [
+    "UPDATE/DELETE without WHERE.",
+    "f-strings building SQL from user input.",
+    "`SELECT *` in application queries (fragile, wasteful)."
+   ],
+   "interview": [
+    "What's the logical evaluation order of a SELECT?",
+    "How do you prevent SQL injection?"
+   ],
+   "practice": [
+    "Can you use: write an upsert for a user settings table?",
+    "Can you debug: a query returns 0 rows for `WHERE col = NULL`."
+   ],
+   "id": "postgres-sql-crud"
+  },
+  {
+   "title": "JOINs and GROUP BY",
+   "minutes": 16,
+   "summary": "Combine tables and summarize data.",
+   "simple": "A **JOIN** combines rows from two tables using a matching condition (usually FK = PK). **GROUP BY** collapses rows into groups so you can compute totals, counts and averages per group.",
+   "technical": "- `INNER JOIN`: only rows with a match on both sides.\n- `LEFT JOIN`: all rows from the left table; NULLs where the right side has no match. Use it for \"customers **and** their orders, including those with none\".\n- `RIGHT JOIN`: mirror of LEFT (rarely used). `FULL OUTER JOIN`: all rows from both sides.\n\nFinding rows **without** a match (anti-join): `LEFT JOIN ... WHERE right.id IS NULL`, or `WHERE NOT EXISTS (...)`.\n\n**Classic trap**: filtering the right table in `WHERE` turns a LEFT JOIN into an INNER JOIN, because NULL rows fail the condition. Put such filters in the `ON` clause.\n\nAggregation: `count(*)`, `count(col)` (ignores NULLs), `sum`, `avg`, `min`, `max`. Every selected column must be either in `GROUP BY` or inside an aggregate. `WHERE` filters rows **before** grouping; `HAVING` filters groups **after**.\n\nJoining to a one-to-many table multiplies rows: joining orders and order_items then `sum(orders.total)` double-counts. Aggregate in a subquery first, or sum at the right grain.",
+   "analogy": "An INNER JOIN is a guest list matched against RSVPs: only people on both lists appear. A LEFT JOIN keeps everyone on the guest list and leaves the RSVP column blank for those who didn't reply.",
+   "example": {
+    "lang": "sql",
+    "code": "-- revenue per customer, including customers with no orders\nSELECT c.email,\n       count(o.id)              AS orders,\n       coalesce(sum(o.total),0) AS revenue\nFROM customers c\nLEFT JOIN orders o\n       ON o.customer_id = c.id\n      AND o.status = 'paid'        -- filter in ON keeps the LEFT JOIN\nGROUP BY c.email\nHAVING count(o.id) < 3\nORDER BY revenue DESC;\n\n-- customers who never ordered (anti-join)\nSELECT c.email FROM customers c\nWHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id);",
+    "explain": "`count(o.id)` counts 0 for customers with no paid orders (count(*) would count 1). The status filter lives in ON so unmatched customers stay."
+   },
+   "terms": [
+    [
+     "INNER JOIN",
+     "Only matching rows."
+    ],
+    [
+     "LEFT JOIN",
+     "All left rows, NULLs for missing right rows."
+    ],
+    [
+     "Anti-join",
+     "Rows with no match: LEFT JOIN … IS NULL or NOT EXISTS."
+    ],
+    [
+     "HAVING",
+     "Filter applied after GROUP BY."
+    ],
+    [
+     "Grain",
+     "What one row represents; mixing grains causes double counting."
+    ]
+   ],
+   "remember": [
+    "LEFT JOIN + WHERE on the right table = accidental INNER JOIN.",
+    "WHERE before grouping, HAVING after.",
+    "`count(col)` ignores NULLs; `count(*)` doesn't."
+   ],
+   "mistakes": [
+    "Double-counting after joining one-to-many tables.",
+    "Using `count(*)` with LEFT JOIN and getting 1 instead of 0.",
+    "Selecting non-aggregated columns not in GROUP BY."
+   ],
+   "interview": [
+    "Difference between INNER and LEFT JOIN?",
+    "When do you use HAVING instead of WHERE?"
+   ],
+   "practice": [
+    "Can you use: top 5 products by revenue last month?",
+    "Can you debug: a LEFT JOIN report silently drops customers without orders."
+   ],
+   "id": "postgres-joins-groupby"
+  },
+  {
+   "title": "Indexes, EXPLAIN and query optimization",
+   "minutes": 16,
+   "summary": "Why indexes speed up lookups, what they cost, and how to read a query plan.",
+   "simple": "An **index** is a separate sorted structure that lets the database find rows without reading the whole table — like a book's index. It speeds up reads but costs storage and slows writes.",
+   "technical": "PostgreSQL's default index is a **B-tree**: a balanced, sorted tree. Looking up `WHERE email = 'a@x.io'` in a 10-million-row table goes from a **sequential scan** (read everything, O(n)) to an **index scan** (a few page reads, ~O(log n)). B-trees also serve range queries (`<`, `>`, `BETWEEN`), `ORDER BY`, and prefix `LIKE 'abc%'`.\n\nTrade-offs — when indexes hurt:\n- Every `INSERT`/`UPDATE`/`DELETE` must also update every index on the table: more indexes = slower writes.\n- They use disk and memory.\n- Low-selectivity columns (e.g. a boolean where 50% are true) rarely benefit; the planner may ignore them.\n- Wrapping the column in a function defeats a plain index: `WHERE lower(email) = ...` needs an expression index `ON (lower(email))`. Leading-wildcard `LIKE '%abc'` can't use a B-tree.\n\n**Composite indexes** `(customer_id, created_at)` serve filters on `customer_id` alone or `customer_id + created_at`, but not `created_at` alone (leftmost-prefix rule). Other types: GIN (jsonb, full-text, arrays), partial indexes (`WHERE status = 'new'`).\n\n**EXPLAIN** shows the plan; **EXPLAIN ANALYZE** runs the query and shows real times and row counts. Look for `Seq Scan` on large tables, big gaps between estimated and actual rows (run `ANALYZE` to refresh statistics), and sorts spilling to disk.",
+   "analogy": "Without an index, finding \"photosynthesis\" means reading the whole textbook. With one, you flip to the back, find the page number and go straight there. But every time the book is revised, the index must be updated too.",
+   "example": {
+    "lang": "sql",
+    "code": "EXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 42 ORDER BY created_at DESC LIMIT 20;\n-- Seq Scan on orders (rows=2000000) ... Execution Time: 412.7 ms\n\nCREATE INDEX CONCURRENTLY idx_orders_customer_created\n    ON orders (customer_id, created_at DESC);\n\nEXPLAIN ANALYZE SELECT * FROM orders WHERE customer_id = 42 ORDER BY created_at DESC LIMIT 20;\n-- Index Scan using idx_orders_customer_created ... Execution Time: 0.09 ms",
+    "explain": "The composite index matches both the filter and the sort, so Postgres reads 20 rows in order and stops. `CONCURRENTLY` builds it without locking writes on a live table."
+   },
+   "terms": [
+    [
+     "B-tree",
+     "Default balanced sorted index."
+    ],
+    [
+     "Sequential scan",
+     "Reading every row of a table."
+    ],
+    [
+     "Selectivity",
+     "Fraction of rows a condition matches; low fraction = selective."
+    ],
+    [
+     "Composite index",
+     "Index on several columns; leftmost-prefix rule."
+    ],
+    [
+     "EXPLAIN ANALYZE",
+     "Shows the executed plan with real timings."
+    ]
+   ],
+   "remember": [
+    "Index what you filter, join and sort on in hot queries.",
+    "Indexes speed reads and slow writes.",
+    "Measure with EXPLAIN ANALYZE, don't guess."
+   ],
+   "mistakes": [
+    "Indexing every column 'just in case'.",
+    "Functions on indexed columns in WHERE.",
+    "Composite index in the wrong column order."
+   ],
+   "interview": [
+    "What is an index and when can it hurt?",
+    "Explain the leftmost-prefix rule."
+   ],
+   "practice": [
+    "Can you debug: a query got slow after the table grew to millions of rows?",
+    "Can you use: read an EXPLAIN plan and identify the bottleneck."
+   ],
+   "id": "postgres-indexes-explain"
+  },
+  {
+   "title": "Transactions, ACID, normalization and PostgreSQL with Django",
+   "minutes": 16,
+   "summary": "Group changes atomically, understand isolation, design normalized schemas and connect Django.",
+   "simple": "A **transaction** groups several statements so they all succeed or all fail. **ACID** describes the guarantees. **Normalization** organizes tables to avoid duplicated, contradictory data.",
+   "technical": "**ACID**:\n- **Atomicity**: all or nothing. A transfer debits and credits, or does neither.\n- **Consistency**: constraints hold before and after.\n- **Isolation**: concurrent transactions don't see each other's half-done work. PostgreSQL defaults to **READ COMMITTED**; `REPEATABLE READ` and `SERIALIZABLE` are stricter (and may require retrying on serialization failures).\n- **Durability**: once committed, it survives crashes (write-ahead log).\n\n`BEGIN; ... COMMIT;` or `ROLLBACK;`. For read-modify-write races (two requests decrementing stock), lock the row: `SELECT ... FOR UPDATE`, or do it atomically in one statement: `UPDATE products SET stock = stock - 1 WHERE id = 7 AND stock > 0`.\n\n**Normalization**: 1NF (atomic values, no repeating columns like `phone1, phone2`), 2NF/3NF (every non-key column depends on the key, the whole key, and nothing but the key). In practice: store each fact once (customer email lives in `customers`, not copied into every order). Denormalize deliberately for read performance, with a plan to keep copies consistent.\n\n**Django + PostgreSQL**: install `psycopg` (v3) or `psycopg2`, set `DATABASES` (ENGINE `django.db.backends.postgresql`, read credentials from environment variables). `transaction.atomic()` wraps a block; `select_for_update()` locks rows; `F()` does atomic updates. Use a connection pooler (PgBouncer) or `CONN_MAX_AGE` for persistent connections in production.",
+   "analogy": "A transaction is a bank transfer slip: the teller completes both halves or tears up the slip. Isolation is tellers not seeing each other's slips until they're stamped.",
+   "example": {
+    "lang": "python",
+    "code": "from django.db import transaction\nfrom django.db.models import F\n\ndef place_order(user, product_id, qty):\n    with transaction.atomic():\n        product = Product.objects.select_for_update().get(pk=product_id)\n        if product.stock < qty:\n            raise OutOfStock(product_id)\n        product.stock = F(\"stock\") - qty\n        product.save(update_fields=[\"stock\"])\n        return Order.objects.create(customer=user, product_id=product_id, qty=qty)\n\n# settings.py\nDATABASES = {\"default\": {\n    \"ENGINE\": \"django.db.backends.postgresql\",\n    \"NAME\": os.environ[\"POSTGRES_DB\"], \"USER\": os.environ[\"POSTGRES_USER\"],\n    \"PASSWORD\": os.environ[\"POSTGRES_PASSWORD\"], \"HOST\": os.environ.get(\"POSTGRES_HOST\", \"localhost\"),\n    \"PORT\": os.environ.get(\"POSTGRES_PORT\", \"5432\"),\n}}",
+    "explain": "The row lock prevents two concurrent orders from both seeing stock=1. If anything raises inside `atomic()`, the stock change and order creation roll back together."
+   },
+   "terms": [
+    [
+     "Transaction",
+     "Unit of work that commits or rolls back as a whole."
+    ],
+    [
+     "ACID",
+     "Atomicity, Consistency, Isolation, Durability."
+    ],
+    [
+     "Isolation level",
+     "How much concurrent transactions can see of each other."
+    ],
+    [
+     "SELECT FOR UPDATE",
+     "Row lock until the transaction ends."
+    ],
+    [
+     "Normalization",
+     "Store each fact once to avoid anomalies."
+    ]
+   ],
+   "remember": [
+    "Multi-step writes go inside one transaction.",
+    "Prevent races with row locks or single atomic UPDATE.",
+    "Store each fact once; denormalize on purpose."
+   ],
+   "mistakes": [
+    "Read-then-write without locking (lost updates).",
+    "Long transactions holding locks during HTTP calls.",
+    "DB credentials hardcoded in settings.py."
+   ],
+   "interview": [
+    "Explain ACID with a money transfer.",
+    "How would you prevent overselling the last item in stock?"
+   ],
+   "practice": [
+    "Can you build: a transfer function that is safe under concurrency?",
+    "Can you debug: two users both bought the last ticket."
+   ],
+   "id": "postgres-transactions"
+  }
+ ]
+}

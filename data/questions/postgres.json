@@ -1,0 +1,226 @@
+[
+ {
+  "topic": "Keys",
+  "lesson": "postgres-relational",
+  "difficulty": "easy",
+  "question": "What does a foreign key enforce?",
+  "options": [
+   "Encryption of the column",
+   "That a referenced row exists in the parent table",
+   "Fast full-text search",
+   "Uniqueness of a column"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Referential integrity: you can't create an order for a customer that doesn't exist.",
+  "id": "postgres-q01",
+  "module": "postgres"
+ },
+ {
+  "topic": "Constraints",
+  "lesson": "postgres-relational",
+  "difficulty": "medium",
+  "question": "Why enforce a UNIQUE constraint on email in the database instead of only checking in Python?",
+  "options": [
+   "Django requires it",
+   "Two concurrent requests can both pass the Python check; only the DB sees both atomically",
+   "Python can't compare strings",
+   "Constraints make queries faster for writes"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Check-then-insert in application code is a race condition.",
+  "id": "postgres-q02",
+  "module": "postgres"
+ },
+ {
+  "topic": "Types",
+  "lesson": "postgres-relational",
+  "difficulty": "medium",
+  "question": "Which type is appropriate for prices?",
+  "options": [
+   "text",
+   "real",
+   "numeric(10,2)",
+   "double precision"
+  ],
+  "correctAnswer": 2,
+  "explanation": "numeric is exact decimal arithmetic. Floating-point types introduce rounding errors.",
+  "id": "postgres-q03",
+  "module": "postgres"
+ },
+ {
+  "topic": "NULL",
+  "lesson": "postgres-sql-crud",
+  "difficulty": "medium",
+  "question": "What does `SELECT count(*) FROM users WHERE deleted_at = NULL;` return?",
+  "options": [
+   "Always 0",
+   "All users",
+   "The number of non-deleted users",
+   "An error"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Comparisons with NULL yield NULL (unknown), never true. Use `IS NULL`.",
+  "id": "postgres-q04",
+  "module": "postgres"
+ },
+ {
+  "topic": "Safety",
+  "lesson": "postgres-sql-crud",
+  "difficulty": "easy",
+  "question": "What happens with `UPDATE orders SET status = 'cancelled';`?",
+  "options": [
+   "Every row in orders is updated",
+   "Nothing, WHERE is required",
+   "Only the last order changes",
+   "Postgres asks for confirmation"
+  ],
+  "correctAnswer": 0,
+  "explanation": "No WHERE clause means all rows. Test with SELECT or inside BEGIN/ROLLBACK.",
+  "id": "postgres-q05",
+  "module": "postgres"
+ },
+ {
+  "topic": "Injection",
+  "lesson": "postgres-sql-crud",
+  "difficulty": "hard",
+  "question": "Which Python code is safe from SQL injection?",
+  "options": [
+   "`cur.execute(\"SELECT * FROM u WHERE email = %s\", [email])`",
+   "`cur.execute(\"SELECT * FROM u WHERE email = '\" + email + \"'\")`",
+   "`cur.execute(\"SELECT * FROM u WHERE email = '%s'\" % email)`",
+   "`cur.execute(f\"SELECT * FROM u WHERE email = '{email}'\")`"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Parameterized queries send the value separately; the driver never treats it as SQL.",
+  "id": "postgres-q06",
+  "module": "postgres"
+ },
+ {
+  "topic": "JOINs",
+  "lesson": "postgres-joins-groupby",
+  "difficulty": "medium",
+  "question": "Which join returns all customers, even those with no orders?",
+  "options": [
+   "INNER JOIN orders",
+   "CROSS JOIN orders",
+   "customers RIGHT JOIN orders",
+   "customers LEFT JOIN orders"
+  ],
+  "correctAnswer": 3,
+  "explanation": "LEFT JOIN keeps every left-side row and fills NULLs for missing matches.",
+  "id": "postgres-q07",
+  "module": "postgres"
+ },
+ {
+  "topic": "JOINs",
+  "lesson": "postgres-joins-groupby",
+  "difficulty": "hard",
+  "question": "A `customers LEFT JOIN orders` query adds `WHERE orders.status = 'paid'` and customers without orders disappear. Why?",
+  "options": [
+   "Customers need a status column",
+   "NULL status fails the WHERE condition, effectively making it an INNER JOIN; move the filter into ON",
+   "LEFT JOIN doesn't support WHERE",
+   "Status needs an index"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Conditions on the right table belong in the ON clause to keep unmatched rows.",
+  "id": "postgres-q08",
+  "module": "postgres"
+ },
+ {
+  "topic": "GROUP BY",
+  "lesson": "postgres-joins-groupby",
+  "difficulty": "medium",
+  "question": "Which clause filters on an aggregate like `sum(total) > 1000`?",
+  "options": [
+   "LIMIT",
+   "HAVING",
+   "WHERE",
+   "ORDER BY"
+  ],
+  "correctAnswer": 1,
+  "explanation": "WHERE runs before grouping, so aggregates don't exist yet. HAVING runs after.",
+  "id": "postgres-q09",
+  "module": "postgres"
+ },
+ {
+  "topic": "Indexes",
+  "lesson": "postgres-indexes-explain",
+  "difficulty": "medium",
+  "question": "What is a downside of adding many indexes to a table?",
+  "options": [
+   "SELECTs become slower",
+   "Transactions are disabled",
+   "Constraints stop working",
+   "Writes (INSERT/UPDATE/DELETE) become slower and storage grows"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Each index must be maintained on every write.",
+  "id": "postgres-q10",
+  "module": "postgres"
+ },
+ {
+  "topic": "Indexes",
+  "lesson": "postgres-indexes-explain",
+  "difficulty": "hard",
+  "question": "You have an index on `(customer_id, created_at)`. Which query can NOT use it efficiently?",
+  "options": [
+   "WHERE customer_id = 5",
+   "WHERE customer_id = 5 ORDER BY created_at",
+   "WHERE created_at > '2024-01-01'",
+   "WHERE customer_id = 5 AND created_at > '2024-01-01'"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Leftmost-prefix rule: the index is sorted by customer_id first, so created_at alone isn't searchable in order.",
+  "id": "postgres-q11",
+  "module": "postgres"
+ },
+ {
+  "topic": "Indexes",
+  "lesson": "postgres-indexes-explain",
+  "difficulty": "hard",
+  "question": "An index exists on `email`, but `WHERE lower(email) = 'a@x.io'` still does a sequential scan. Fix?",
+  "options": [
+   "Increase work_mem",
+   "Create an expression index ON (lower(email))",
+   "Use LIKE instead",
+   "Rebuild the index"
+  ],
+  "correctAnswer": 1,
+  "explanation": "A plain index stores raw values; the function result needs its own expression index (or use citext).",
+  "id": "postgres-q12",
+  "module": "postgres"
+ },
+ {
+  "topic": "ACID",
+  "lesson": "postgres-transactions",
+  "difficulty": "easy",
+  "question": "Which ACID property guarantees 'all or nothing'?",
+  "options": [
+   "Isolation",
+   "Atomicity",
+   "Durability",
+   "Consistency"
+  ],
+  "correctAnswer": 1,
+  "explanation": "If any statement fails, the entire transaction rolls back.",
+  "id": "postgres-q13",
+  "module": "postgres"
+ },
+ {
+  "topic": "Concurrency",
+  "lesson": "postgres-transactions",
+  "difficulty": "hard",
+  "question": "Two requests read stock=1, both see enough stock and both create orders. Which fix prevents this?",
+  "options": [
+   "Use a bigger server",
+   "Cache the stock value",
+   "Lock the row with SELECT ... FOR UPDATE inside a transaction (or an atomic UPDATE ... WHERE stock > 0)",
+   "Add an index on stock"
+  ],
+  "correctAnswer": 2,
+  "explanation": "The second transaction waits for the lock and then sees stock=0.",
+  "id": "postgres-q14",
+  "module": "postgres"
+ }
+]

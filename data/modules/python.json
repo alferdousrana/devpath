@@ -1,0 +1,454 @@
+{
+ "id": "python",
+ "trackId": "backend",
+ "title": "Python",
+ "tagline": "The language you'll build services, scripts and ML pipelines in.",
+ "overview": "Python is the primary language of this track: Django and DRF are Python, most AI/ML tooling is Python, and so is a lot of automation. This module goes past syntax into how Python actually behaves — names and objects, scope, the data model behind containers, exceptions, OOP design, the features frameworks rely on, and the habits that make code maintainable.",
+ "objectives": [
+  "Explain Python's object model: names, mutability, identity.",
+  "Write functions with correct defaults, scope and closures.",
+  "Choose the right container and use comprehensions well.",
+  "Handle errors precisely and manage dependencies with venvs.",
+  "Design with classes, composition and abstractions.",
+  "Use decorators, generators and context managers.",
+  "Write typed, tested, well-structured code."
+ ],
+ "concepts": [
+  [
+   "Mutability",
+   "Lists/dicts/sets change in place; str/tuple/int don't."
+  ],
+  [
+   "Closure",
+   "Function plus captured variables."
+  ],
+  [
+   "Hash table",
+   "Data structure behind dict and set."
+  ],
+  [
+   "EAFP",
+   "Try, then handle exceptions."
+  ],
+  [
+   "Duck typing",
+   "Behavior over declared type."
+  ],
+  [
+   "Generator",
+   "Lazy, single-use value producer."
+  ]
+ ],
+ "notes": [
+  "Run code as you read: `python -i` or a notebook.",
+  "Read tracebacks bottom-up: the last line is the error, the lines above show where.",
+  "PEP 8 is the style guide; let ruff/black enforce it."
+ ],
+ "checkpoints": {
+  "explain": [
+   "Why `b = a` doesn't copy",
+   "LEGB scope",
+   "How a decorator works step by step"
+  ],
+  "use": [
+   "Comprehensions, Counter, defaultdict",
+   "pytest with fixtures and parametrize",
+   "venv + requirements"
+  ],
+  "debug": [
+   "Shared mutable default",
+   "UnboundLocalError",
+   "ModuleNotFoundError from the wrong interpreter"
+  ],
+  "build": [
+   "A typed, tested CLI tool",
+   "A retry decorator and a batching generator"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Log analyzer CLI",
+   "goal": "Combine files, exceptions, collections and generators.",
+   "steps": [
+    "Write `analyze.py PATH` that streams a log with a generator.",
+    "Count levels (INFO/WARN/ERROR) with Counter.",
+    "Raise a custom error for a missing file and exit with code 1.",
+    "Add type hints and three pytest tests."
+   ]
+  },
+  {
+   "title": "Plugin notifier",
+   "goal": "Practice abstraction and composition.",
+   "steps": [
+    "Define a `Notifier` Protocol or ABC.",
+    "Implement Console and File notifiers.",
+    "Write a service that takes a notifier in its constructor.",
+    "Test it with a fake notifier that records messages."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "Fundamentals: variables, types, conditions, loops",
+   "minutes": 15,
+   "summary": "How Python names values, the core types, and control flow.",
+   "simple": "A Python **variable** is a name that refers to an object. Every object has a **type** (int, str, list…). Conditions (`if`) choose what runs; loops (`for`, `while`) repeat.",
+   "technical": "Python is **dynamically typed** (names have no fixed type) but **strongly typed** (`\"3\" + 3` raises `TypeError`; no silent conversion).\n\nCore types: `int` (arbitrary size), `float` (IEEE-754, so `0.1 + 0.2 != 0.3`), `bool`, `str` (immutable Unicode), `None`, plus containers `list`, `tuple`, `dict`, `set`.\n\n**Names point to objects.** `b = a` doesn't copy; both names refer to the same object. That matters for mutable objects (lists, dicts).\n\nTruthiness: `0`, `0.0`, `\"\"`, `[]`, `{}`, `None` are falsy; most else is truthy. `if items:` is idiomatic for \"non-empty\".\n\n`==` compares values; `is` compares identity. Use `is` only for `None`: `if x is None:`.\n\nLoops: `for item in iterable:` iterates directly. Use `enumerate(seq)` for index+value and `zip(a, b)` to walk two sequences together. `range(5)` is 0..4. `break` exits, `continue` skips to the next iteration. A `for…else` runs the `else` only if the loop did not `break`.",
+   "analogy": "Variables are name tags, not boxes. `b = a` sticks a second tag on the same suitcase; repack the suitcase and both tags see it.",
+   "example": {
+    "lang": "python",
+    "code": "scores = {\"ana\": 91, \"ben\": 58, \"chi\": 74}\nfor i, (name, score) in enumerate(scores.items(), start=1):\n    if score >= 90:\n        grade = \"A\"\n    elif score >= 70:\n        grade = \"B\"\n    else:\n        grade = \"C\"\n    print(f\"{i}. {name}: {grade}\")\n\na = [1, 2]\nb = a          # same list\nb.append(3)\nprint(a)       # [1, 2, 3]\nprint(0.1 + 0.2 == 0.3)  # False -> use math.isclose",
+    "explain": "`enumerate` gives a counter, tuple unpacking splits each pair. The list aliasing and float comparison are the two classic surprises."
+   },
+   "terms": [
+    [
+     "Dynamic typing",
+     "Names can refer to objects of any type."
+    ],
+    [
+     "Strong typing",
+     "No implicit conversion between incompatible types."
+    ],
+    [
+     "Truthiness",
+     "How non-bool values behave in `if`."
+    ],
+    [
+     "Identity vs equality",
+     "`is` vs `==`."
+    ],
+    [
+     "f-string",
+     "`f\"{x}\"` string interpolation."
+    ]
+   ],
+   "remember": [
+    "Assignment binds names; it never copies.",
+    "`is None`, not `== None`.",
+    "Floats are approximate; use `math.isclose` or `decimal.Decimal` for money."
+   ],
+   "mistakes": [
+    "Comparing floats with `==`.",
+    "Using `is` to compare strings or numbers.",
+    "Modifying a list while iterating over it."
+   ],
+   "interview": [
+    "What's the difference between `==` and `is`?",
+    "Is Python statically or dynamically typed? Strongly or weakly?"
+   ],
+   "practice": [
+    "Can you explain: why `b.append(3)` changed `a`?",
+    "Can you use: FizzBuzz with a single loop and no repeated conditions."
+   ],
+   "id": "python-fundamentals"
+  },
+  {
+   "title": "Functions and scope",
+   "minutes": 14,
+   "summary": "Parameters, return values, *args/**kwargs, and how names are looked up.",
+   "simple": "A **function** packages logic under a name, takes **arguments** and **returns** a value. **Scope** decides which variables a piece of code can see.",
+   "technical": "```python\ndef greet(name: str, greeting: str = \"Hello\") -> str:\n    return f\"{greeting}, {name}!\"\n```\nParameters can be positional, keyword (`greet(name=\"A\")`), have defaults, collect extras with `*args` (tuple) and `**kwargs` (dict), or be keyword-only after `*`. A function without `return` returns `None`.\n\n**Default values are evaluated once**, at definition. `def add(x, items=[])` shares one list across calls — use `items=None` and create inside.\n\n**LEGB** name lookup: Local → Enclosing function → Global (module) → Builtins. Assigning to a name inside a function makes it local unless declared `global` or `nonlocal`. Reading a global is fine; reassigning it without `global` raises `UnboundLocalError`.\n\nFunctions are **first-class objects**: pass them as arguments (`sorted(users, key=lambda u: u.age)`), return them, store them. A function that captures variables from an enclosing scope is a **closure** — the basis of decorators.\n\nArguments are passed by **object reference**: mutating a passed list affects the caller; rebinding the parameter does not.",
+   "analogy": "A function is a recipe card: ingredients in (parameters), dish out (return value). Scope is kitchen rules: you can use the house salt (globals), but your own counter (locals) is checked first.",
+   "example": {
+    "lang": "python",
+    "code": "def add_tag(tag, tags=None):\n    if tags is None:\n        tags = []\n    tags.append(tag)\n    return tags\n\nprint(add_tag(\"a\"))  # ['a']\nprint(add_tag(\"b\"))  # ['b']  (no shared state)\n\ndef make_counter():\n    count = 0\n    def inc():\n        nonlocal count\n        count += 1\n        return count\n    return inc\n\nc = make_counter()\nprint(c(), c())      # 1 2",
+    "explain": "The `None` default avoids the shared-mutable-default bug. `make_counter` returns a closure that keeps `count` alive between calls."
+   },
+   "terms": [
+    [
+     "*args / **kwargs",
+     "Collect extra positional / keyword arguments."
+    ],
+    [
+     "LEGB",
+     "Local, Enclosing, Global, Builtins lookup order."
+    ],
+    [
+     "Closure",
+     "Inner function remembering enclosing variables."
+    ],
+    [
+     "First-class function",
+     "Functions are values you can pass and return."
+    ]
+   ],
+   "remember": [
+    "Never use a mutable default argument.",
+    "LEGB: local is checked first.",
+    "Functions are objects; closures capture variables."
+   ],
+   "mistakes": [
+    "`def f(x=[])`.",
+    "Shadowing builtins: naming a variable `list`, `id` or `type`.",
+    "Expecting reassignment of a parameter to change the caller's variable."
+   ],
+   "interview": [
+    "Explain the mutable default argument bug.",
+    "What does `nonlocal` do?"
+   ],
+   "practice": [
+    "Can you debug: an UnboundLocalError when incrementing a global counter?",
+    "Can you build: a function accepting any number of numbers and returning their mean."
+   ],
+   "id": "python-functions-scope"
+  },
+  {
+   "title": "Lists, dicts, sets, tuples and comprehensions",
+   "minutes": 15,
+   "summary": "Choose the right container and build them concisely with comprehensions.",
+   "simple": "Python's four built-in containers each fit a job: **list** (ordered, changeable), **tuple** (ordered, fixed), **dict** (key → value lookup), **set** (unique items, fast membership).",
+   "technical": "- **list** `[1, 2, 3]`: mutable sequence. Append O(1) amortized, index O(1), `x in list` O(n), insert/remove at front O(n).\n- **tuple** `(1, 2)`: immutable; usable as dict keys; good for fixed records like coordinates. `(5,)` is a one-element tuple.\n- **dict** `{\"id\": 1}`: hash table, average O(1) get/set/`in`. Keys must be hashable (immutable). Insertion order is preserved (3.7+). `d.get(\"k\", default)` avoids KeyError. `collections.defaultdict` and `Counter` save boilerplate.\n- **set** `{1, 2}`: unique hashable items, O(1) membership, union `|`, intersection `&`, difference `-`. `{}` is an empty **dict**; use `set()`.\n\n**Comprehensions** build containers from iterables:\n```python\nsquares = [n * n for n in range(10) if n % 2 == 0]\nby_id = {u[\"id\"]: u for u in users}\ndomains = {email.split(\"@\")[1] for email in emails}\ntotal = sum(x * x for x in nums)   # generator expression, no list built\n```\nKeep them to one idea; nested logic belongs in a loop.\n\nCopying: `new = old.copy()` or `list(old)` is **shallow**: nested objects are still shared. Use `copy.deepcopy` for full copies.",
+   "analogy": "A list is a queue at the bakery (order matters), a tuple is a printed receipt (can't edit), a dict is a phone book (look up by name), a set is the guest list (each name once, quick to check).",
+   "example": {
+    "lang": "python",
+    "code": "from collections import Counter\n\norders = [(\"ana\", \"tea\"), (\"ben\", \"coffee\"), (\"ana\", \"coffee\"), (\"chi\", \"tea\")]\n\ndrinks = Counter(d for _, d in orders)\nprint(drinks.most_common(1))            # [('tea', 2)]\n\ncustomers = {name for name, _ in orders}\nprint(\"ben\" in customers)               # True, O(1)\n\nby_customer = {}\nfor name, drink in orders:\n    by_customer.setdefault(name, []).append(drink)\nprint(by_customer[\"ana\"])               # ['tea', 'coffee']",
+    "explain": "Counter tallies, a set comprehension dedupes and gives fast lookup, and setdefault groups values under keys."
+   },
+   "terms": [
+    [
+     "Hashable",
+     "Has a stable hash; required for dict keys and set items."
+    ],
+    [
+     "Comprehension",
+     "Concise expression building a list/dict/set."
+    ],
+    [
+     "Generator expression",
+     "Lazy comprehension in parentheses."
+    ],
+    [
+     "Shallow copy",
+     "New outer container, shared inner objects."
+    ]
+   ],
+   "remember": [
+    "dict/set membership is O(1); list membership is O(n).",
+    "`{}` is a dict; `set()` is an empty set.",
+    "Copies are shallow unless you deepcopy."
+   ],
+   "mistakes": [
+    "Using a list for membership checks in a hot loop.",
+    "Unreadable nested comprehensions.",
+    "`[[0]*3]*3` creates three references to the same inner list."
+   ],
+   "interview": [
+    "When would you use a tuple instead of a list?",
+    "Why must dict keys be hashable?"
+   ],
+   "practice": [
+    "Can you use: dedupe a list while preserving order (hint: `dict.fromkeys`)?",
+    "Can you debug: changing one cell of `[[0]*3]*3` changes a whole column."
+   ],
+   "id": "python-collections"
+  },
+  {
+   "title": "Exceptions, modules, packages and virtual environments",
+   "minutes": 15,
+   "summary": "Handle errors correctly, organize code into modules, and isolate dependencies.",
+   "simple": "An **exception** signals that something went wrong; you handle it with `try/except`. A **module** is a `.py` file; a **package** is a directory of modules. A **virtual environment** gives each project its own installed libraries.",
+   "technical": "```python\ntry:\n    user = repo.get(user_id)\nexcept UserNotFound:\n    return None\nexcept (TimeoutError, ConnectionError) as e:\n    log.warning(\"db unavailable: %s\", e)\n    raise\nelse:\n    audit(user)        # only if no exception\nfinally:\n    conn.close()       # always runs\n```\nCatch **specific** exceptions. A bare `except:` also catches `KeyboardInterrupt` and hides bugs. Define your own: `class PaymentError(Exception): ...`. Use `raise NewError(...) from e` to keep the cause. Python style is **EAFP** (\"easier to ask forgiveness than permission\"): try the operation and handle failure.\n\n**Imports**: `import json`, `from pathlib import Path`. A package is a directory (often with `__init__.py`); `from app.services.billing import charge`. The `if __name__ == \"__main__\":` guard runs code only when the file is executed directly, not imported.\n\n**Virtual environments**: `python -m venv .venv`, then `source .venv/bin/activate` (Windows: `.venv\\Scripts\\activate`). `pip install requests` installs into it. Record dependencies with `pip freeze > requirements.txt` (or pyproject.toml with tools like Poetry/uv), install with `pip install -r requirements.txt`. Never commit `.venv/`.",
+   "analogy": "Exceptions are a fire alarm: the code stops what it's doing and the alarm travels up floors until someone trained for that kind of fire (a matching `except`) handles it. A venv is a separate toolbox per project so one job's tools don't break another's.",
+   "example": {
+    "lang": "python",
+    "code": "import json\nfrom pathlib import Path\n\nclass ConfigError(Exception):\n    pass\n\ndef load_config(path: str) -> dict:\n    try:\n        return json.loads(Path(path).read_text())\n    except FileNotFoundError as e:\n        raise ConfigError(f\"config missing: {path}\") from e\n    except json.JSONDecodeError as e:\n        raise ConfigError(f\"invalid JSON in {path}, line {e.lineno}\") from e\n\nif __name__ == \"__main__\":\n    print(load_config(\"settings.json\"))",
+    "explain": "Low-level errors are translated into one domain error with a clear message, while `from e` keeps the original traceback for debugging."
+   },
+   "terms": [
+    [
+     "EAFP",
+     "Try first, handle exceptions; idiomatic Python."
+    ],
+    [
+     "finally",
+     "Block that always runs, for cleanup."
+    ],
+    [
+     "Package",
+     "Directory of modules importable with dotted paths."
+    ],
+    [
+     "venv",
+     "Isolated Python environment per project."
+    ],
+    [
+     "__name__ == \"__main__\"",
+     "True only when the file is run directly."
+    ]
+   ],
+   "remember": [
+    "Catch specific exceptions; never bare `except:`.",
+    "`raise … from e` preserves the cause.",
+    "One venv per project; pin dependencies."
+   ],
+   "mistakes": [
+    "`except Exception: pass` swallowing real bugs.",
+    "Installing packages globally with sudo pip.",
+    "Naming your file `json.py` and shadowing the stdlib module."
+   ],
+   "interview": [
+    "What's the difference between `else` and `finally` in try?",
+    "Why use virtual environments?"
+   ],
+   "practice": [
+    "Can you build: a CLI script with a main guard, a custom exception and proper exit codes?",
+    "Can you debug: `ModuleNotFoundError` even though you just pip installed it (hint: which python?)."
+   ],
+   "id": "python-errors-modules"
+  },
+  {
+   "title": "OOP: classes, inheritance, polymorphism, abstraction",
+   "minutes": 16,
+   "summary": "Model domain objects with classes, share behavior carefully, and program to interfaces.",
+   "simple": "A **class** is a blueprint; an **object** (instance) is something built from it, with its own data (attributes) and behavior (methods). OOP helps model things like `User`, `Order` or `PaymentGateway`.",
+   "technical": "```python\nclass Account:\n    interest = 0.01                 # class attribute (shared)\n    def __init__(self, owner, balance=0):\n        self.owner = owner          # instance attributes\n        self._balance = balance     # leading _ = internal by convention\n    @property\n    def balance(self):\n        return self._balance\n    def deposit(self, amount):\n        if amount <= 0:\n            raise ValueError(\"amount must be positive\")\n        self._balance += amount\n    def __repr__(self):\n        return f\"Account({self.owner!r}, {self._balance})\"\n```\n- **Encapsulation**: keep state consistent behind methods; `@property` exposes read access without a setter.\n- **Inheritance**: `class Savings(Account)` reuses and extends; `super().__init__(...)` calls the parent. Use it for genuine \"is-a\" relationships.\n- **Polymorphism**: different classes respond to the same method call. Python uses **duck typing**: if it has `.send()`, you can call `.send()`.\n- **Abstraction**: `abc.ABC` with `@abstractmethod` defines an interface that subclasses must implement (or use `typing.Protocol` for structural typing).\n- **Composition over inheritance**: an `OrderService` that *has* a `PaymentGateway` is usually more flexible than deep class hierarchies.\n\n`@classmethod` receives the class (alternative constructors like `from_dict`); `@staticmethod` receives nothing. `@dataclass` generates `__init__`, `__repr__`, `__eq__` for data-holding classes.",
+   "analogy": "An abstract `PaymentGateway` is a wall socket standard. Stripe and PayPal adapters are plugs that fit it. Your order code only knows about the socket, so you can swap plugs without rewiring the house.",
+   "example": {
+    "lang": "python",
+    "code": "from abc import ABC, abstractmethod\nfrom dataclasses import dataclass\n\nclass Notifier(ABC):\n    @abstractmethod\n    def send(self, to: str, msg: str) -> None: ...\n\nclass EmailNotifier(Notifier):\n    def send(self, to, msg):\n        print(f\"email to {to}: {msg}\")\n\nclass SmsNotifier(Notifier):\n    def send(self, to, msg):\n        print(f\"sms to {to}: {msg[:160]}\")\n\n@dataclass\nclass SignupService:\n    notifier: Notifier          # composition\n\n    def register(self, contact: str):\n        self.notifier.send(contact, \"Welcome!\")\n\nSignupService(EmailNotifier()).register(\"a@x.io\")\nSignupService(SmsNotifier()).register(\"+8801...\")",
+    "explain": "SignupService depends on the abstract Notifier, not a concrete class. Swapping the implementation needs no change to the service — and in tests you can pass a fake."
+   },
+   "terms": [
+    [
+     "Instance vs class attribute",
+     "Per-object data vs data shared by all instances."
+    ],
+    [
+     "super()",
+     "Delegate to the parent class's method."
+    ],
+    [
+     "Duck typing",
+     "Behavior matters, not the declared type."
+    ],
+    [
+     "ABC",
+     "Abstract base class defining required methods."
+    ],
+    [
+     "Composition",
+     "Building objects from other objects instead of inheriting."
+    ]
+   ],
+   "remember": [
+    "Prefer composition; inherit only for real is-a relationships.",
+    "Depend on abstractions to make code testable.",
+    "`@dataclass` for plain data containers."
+   ],
+   "mistakes": [
+    "Mutable class attributes shared accidentally across instances.",
+    "Deep inheritance trees no one can follow.",
+    "Getters/setters for everything, Java-style, instead of plain attributes or properties."
+   ],
+   "interview": [
+    "Explain polymorphism with a backend example.",
+    "Composition vs inheritance: when do you pick each?"
+   ],
+   "practice": [
+    "Can you build: a `Shape` ABC with `area()` and two implementations?",
+    "Can you explain: why depending on an interface makes unit testing easier."
+   ],
+   "id": "python-oop"
+  },
+  {
+   "title": "Decorators, iterators, generators, context managers",
+   "minutes": 16,
+   "summary": "The Python features that power frameworks like Django and pytest.",
+   "simple": "**Decorators** wrap functions to add behavior. **Iterators/generators** produce values one at a time. **Context managers** (`with`) guarantee setup and cleanup.",
+   "technical": "**Decorators.** `@timed` above `def f` means `f = timed(f)`. A decorator is a function taking a function and returning a new one (a closure). Use `functools.wraps` to keep the original name/docstring. Decorators with arguments are one more level: `@retry(times=3)` → `retry(3)` returns the actual decorator. Django's `@login_required` and DRF's `@api_view` are decorators.\n\n**Iterators.** An iterable has `__iter__`; an iterator has `__next__` and raises `StopIteration` when done. `for` calls these for you.\n\n**Generators** are functions with `yield`. Calling one returns a generator; each `next()` runs to the next `yield` and pauses, keeping local state. They are **lazy**: `for line in read_lines(huge_file)` uses constant memory. A generator can be consumed **once**.\n\n**Context managers** implement `__enter__/__exit__`, or use `@contextlib.contextmanager` with a generator:\n```python\nwith open(\"data.csv\") as f:   # file closed even if an exception occurs\n    ...\n```\n`__exit__` receives the exception (if any) and runs regardless — ideal for files, locks, DB transactions (`with transaction.atomic():` in Django).",
+   "analogy": "A decorator is gift wrapping: the gift (function) is unchanged, but there's a layer around it that does something first and after. A generator is a tap: water comes when you open it, not a full bathtub delivered at once.",
+   "example": {
+    "lang": "python",
+    "code": "import time, functools\nfrom contextlib import contextmanager\n\ndef timed(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        start = time.perf_counter()\n        try:\n            return func(*args, **kwargs)\n        finally:\n            print(f\"{func.__name__} took {time.perf_counter() - start:.3f}s\")\n    return wrapper\n\ndef batched(items, size):\n    for i in range(0, len(items), size):\n        yield items[i:i + size]\n\n@contextmanager\ndef step(name):\n    print(f\"start {name}\")\n    yield\n    print(f\"end {name}\")\n\n@timed\ndef import_users(rows):\n    with step(\"import\"):\n        for batch in batched(rows, 2):\n            print(\"insert\", batch)\n\nimport_users([1, 2, 3, 4, 5])",
+    "explain": "The decorator adds timing to any function, the generator streams batches lazily, and the context manager brackets the work."
+   },
+   "terms": [
+    [
+     "Decorator",
+     "Callable that takes a function and returns a replacement."
+    ],
+    [
+     "functools.wraps",
+     "Copies metadata to the wrapper."
+    ],
+    [
+     "Generator",
+     "Function using `yield`; produces values lazily."
+    ],
+    [
+     "Context manager",
+     "Object used with `with` that guarantees cleanup."
+    ]
+   ],
+   "remember": [
+    "`@d` above `def f` is `f = d(f)`.",
+    "Generators are lazy and single-use.",
+    "Use `with` for anything that must be released."
+   ],
+   "mistakes": [
+    "Forgetting to `return` the result inside the wrapper.",
+    "Iterating a generator twice and getting nothing the second time.",
+    "Manual `open()`/`close()` that leaks on exceptions."
+   ],
+   "interview": [
+    "Write a decorator that retries a function 3 times.",
+    "Why use a generator to process a 10 GB file?"
+   ],
+   "practice": [
+    "Can you build: `@retry(times, delay)` with arguments?",
+    "Can you debug: a decorated view now shows the wrong name in logs (missing wraps)."
+   ],
+   "id": "python-advanced"
+  },
+  {
+   "title": "Type hints, testing, project structure and clean code",
+   "minutes": 15,
+   "summary": "Write Python that teammates (and future you) can trust and change.",
+   "simple": "**Type hints** document what functions accept and return and let tools catch bugs. **Tests** prove behavior and protect it during changes. A consistent **project structure** and clean naming keep a codebase navigable.",
+   "technical": "**Type hints** are not enforced at runtime; checkers like **mypy** or **pyright** read them.\n```python\ndef find_user(users: list[User], email: str) -> User | None: ...\n```\nUseful forms: `list[int]`, `dict[str, Any]`, `X | None` (Optional), `Callable[[int], str]`, `TypedDict`, `Protocol`.\n\n**Testing with pytest**: files `test_*.py`, functions `test_*`, plain `assert`. Fixtures provide setup (`@pytest.fixture`), `pytest.raises(ValueError)` checks errors, `@pytest.mark.parametrize` runs one test over many inputs. Aim for fast **unit tests** on logic and fewer **integration tests** touching the DB/HTTP. Arrange → Act → Assert.\n\n**Structure** (src layout):\n```text\nmyservice/\n  pyproject.toml\n  src/myservice/__init__.py\n  src/myservice/domain.py\n  src/myservice/api.py\n  tests/test_domain.py\n```\n**Clean code**: descriptive names (`unpaid_invoices`, not `lst2`), small functions doing one thing, no magic numbers (`MAX_RETRIES = 3`), early returns instead of deep nesting, formatting by `black`/`ruff format`, linting by `ruff`. Comments explain *why*; code explains *what*.",
+   "analogy": "Tests are the safety net under a trapeze: you can try bold moves (refactors) because a fall gets caught. Type hints are labels on wires: the electrician doesn't need to guess what each one carries.",
+   "example": {
+    "lang": "python",
+    "code": "# src/shop/pricing.py\ndef apply_discount(price: float, percent: float) -> float:\n    if not 0 <= percent <= 100:\n        raise ValueError(\"percent must be between 0 and 100\")\n    return round(price * (1 - percent / 100), 2)\n\n# tests/test_pricing.py\nimport pytest\nfrom shop.pricing import apply_discount\n\n@pytest.mark.parametrize(\"price,percent,expected\", [\n    (100, 0, 100), (100, 25, 75), (19.99, 10, 17.99),\n])\ndef test_apply_discount(price, percent, expected):\n    assert apply_discount(price, percent) == expected\n\ndef test_rejects_invalid_percent():\n    with pytest.raises(ValueError):\n        apply_discount(100, 120)",
+    "explain": "One parametrized test covers the happy paths; a second covers the error case. The hints tell readers and mypy what the function expects."
+   },
+   "terms": [
+    [
+     "Type hint",
+     "Annotation of expected types, checked by static tools."
+    ],
+    [
+     "pytest fixture",
+     "Reusable setup injected by name."
+    ],
+    [
+     "Parametrize",
+     "Run one test with several input sets."
+    ],
+    [
+     "Linting",
+     "Automated checks for bugs and style."
+    ]
+   ],
+   "remember": [
+    "Hints are for tools and humans; not enforced at runtime.",
+    "Test behavior, including error cases.",
+    "Name things for what they mean."
+   ],
+   "mistakes": [
+    "Tests that only check the happy path.",
+    "Huge functions with 5 levels of nesting.",
+    "Ignoring mypy errors with `# type: ignore` everywhere."
+   ],
+   "interview": [
+    "What does a fixture do in pytest?",
+    "How do type hints help in a large codebase if Python doesn't enforce them?"
+   ],
+   "practice": [
+    "Can you build: a small package with src layout, typed functions and a pytest suite?",
+    "Can you debug: a test passes alone but fails with the full suite (shared state)."
+   ],
+   "id": "python-quality"
+  }
+ ]
+}

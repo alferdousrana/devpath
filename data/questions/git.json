@@ -1,0 +1,194 @@
+[
+ {
+  "topic": "Git vs GitHub",
+  "lesson": "git-basics",
+  "difficulty": "easy",
+  "question": "Which is true?",
+  "options": [
+   "GitHub and Git are the same program",
+   "GitHub is required to use Git",
+   "Git is a website",
+   "Git is a version-control tool; GitHub hosts Git repositories and adds collaboration features"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Git works fully offline on your machine. GitHub adds hosting, pull requests and CI.",
+  "id": "git-q01",
+  "module": "git"
+ },
+ {
+  "topic": "Staging",
+  "lesson": "git-basics",
+  "difficulty": "medium",
+  "question": "You edited `a.py` and `b.py` but want only `a.py` in the next commit. What do you run?",
+  "options": [
+   "`git add a.py` then `git commit`",
+   "`git commit -a`",
+   "`git add .` then `git commit`",
+   "`git push a.py`"
+  ],
+  "correctAnswer": 0,
+  "explanation": "The staging area lets you choose exactly what the next snapshot contains. `-a` and `add .` would include b.py.",
+  "id": "git-q02",
+  "module": "git"
+ },
+ {
+  "topic": "Diff",
+  "lesson": "git-basics",
+  "difficulty": "medium",
+  "question": "Which command shows changes that are staged for the next commit?",
+  "options": [
+   "`git log`",
+   "`git status --ignored`",
+   "`git diff --staged`",
+   "`git diff`"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Plain `git diff` compares working tree to the index (unstaged). `--staged` compares index to the last commit.",
+  "id": "git-q03",
+  "module": "git"
+ },
+ {
+  "topic": "Merging",
+  "lesson": "git-branching",
+  "difficulty": "medium",
+  "question": "You branch from main, commit twice; main has no new commits. You merge into main. What happens?",
+  "options": [
+   "Git rebases automatically",
+   "A conflict always occurs",
+   "A fast-forward: main's pointer moves to your branch's tip",
+   "A merge commit with two parents is created"
+  ],
+  "correctAnswer": 2,
+  "explanation": "With no divergence, Git simply moves the pointer. A merge commit appears only when both sides have new commits (or you pass `--no-ff`).",
+  "id": "git-q04",
+  "module": "git"
+ },
+ {
+  "topic": "Branches",
+  "lesson": "git-branching",
+  "difficulty": "easy",
+  "question": "What is a Git branch, technically?",
+  "options": [
+   "A full copy of the project folder",
+   "A movable pointer to a commit",
+   "A separate repository",
+   "A zip archive of history"
+  ],
+  "correctAnswer": 1,
+  "explanation": "That's why creating branches is instant and cheap.",
+  "id": "git-q05",
+  "module": "git"
+ },
+ {
+  "topic": "Fetch vs pull",
+  "lesson": "git-remotes",
+  "difficulty": "medium",
+  "question": "What does `git fetch` do?",
+  "options": [
+   "Uploads your commits",
+   "Merges remote changes into your files",
+   "Deletes local branches",
+   "Downloads new commits into remote-tracking branches without changing your working branch"
+  ],
+  "correctAnswer": 3,
+  "explanation": "`pull` = fetch + merge/rebase. Fetch is always safe to run.",
+  "id": "git-q06",
+  "module": "git"
+ },
+ {
+  "topic": "Push rejected",
+  "lesson": "git-remotes",
+  "difficulty": "medium",
+  "question": "`git push` is rejected: the remote contains work you don't have. Best fix?",
+  "options": [
+   "`git pull --rebase` (or pull), resolve conflicts if any, then push",
+   "Delete the remote branch",
+   "Clone the repo again",
+   "`git push --force`"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Integrate others' commits first. Force-pushing would erase their work.",
+  "id": "git-q07",
+  "module": "git"
+ },
+ {
+  "topic": "Pull requests",
+  "lesson": "git-remotes",
+  "difficulty": "easy",
+  "question": "A pull request is…",
+  "options": [
+   "a hosting-platform feature to review and merge a branch",
+   "a way to delete commits",
+   "a Git command for downloading",
+   "the same as `git pull`"
+  ],
+  "correctAnswer": 0,
+  "explanation": "PRs live on GitHub/GitLab. They show diffs, CI results and reviews.",
+  "id": "git-q08",
+  "module": "git"
+ },
+ {
+  "topic": "Rebase",
+  "lesson": "git-rebase",
+  "difficulty": "hard",
+  "question": "Why should you avoid rebasing a branch others have already pulled?",
+  "options": [
+   "Rebase is slower than merge",
+   "Rebase only works locally",
+   "Rebase deletes files",
+   "Rebase rewrites commits with new SHAs, so others' history diverges from yours"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Teammates' work is based on the old commits; after your rebase they'd have to untangle duplicated history.",
+  "id": "git-q09",
+  "module": "git"
+ },
+ {
+  "topic": "gitignore",
+  "lesson": "git-ignore-conflicts",
+  "difficulty": "medium",
+  "question": "You add `.env` to `.gitignore`, but Git still shows `.env` as modified. Why?",
+  "options": [
+   "Patterns need a leading slash",
+   ".gitignore needs a restart",
+   "The file is already tracked; ignore rules only apply to untracked files",
+   ".gitignore only works on GitHub"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Run `git rm --cached .env`, commit, and — since it was committed — rotate any secrets in it.",
+  "id": "git-q10",
+  "module": "git"
+ },
+ {
+  "topic": "Leaked secret",
+  "lesson": "git-ignore-conflicts",
+  "difficulty": "hard",
+  "question": "You pushed a commit containing an API key to a public repo. What's the first thing to do?",
+  "options": [
+   "Make the repo private",
+   "Rename the file",
+   "Revoke/rotate the key immediately",
+   "Delete the line and commit again"
+  ],
+  "correctAnswer": 2,
+  "explanation": "The key is in history and may already be scraped by bots. Rotate it first; cleaning history is secondary.",
+  "id": "git-q11",
+  "module": "git"
+ },
+ {
+  "topic": "Conflicts",
+  "lesson": "git-ignore-conflicts",
+  "difficulty": "medium",
+  "question": "After editing a conflicted file and removing the markers during a merge, what's next?",
+  "options": [
+   "`git add <file>` then `git commit`",
+   "`git merge --continue-all`",
+   "Nothing, Git detects it",
+   "`git push --force`"
+  ],
+  "correctAnswer": 0,
+  "explanation": "`git add` marks the conflict resolved; committing completes the merge (during a rebase use `git rebase --continue`).",
+  "id": "git-q12",
+  "module": "git"
+ }
+]
