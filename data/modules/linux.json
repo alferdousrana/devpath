@@ -1,0 +1,394 @@
+{
+ "id": "linux",
+ "trackId": "backend",
+ "title": "Linux Basics",
+ "tagline": "The operating system under every server, container and cloud VM.",
+ "overview": "Backend code runs on Linux: your Django app in production, your Docker containers, your CI runners. This module gives you working fluency in the terminal: moving around the filesystem, reading logs, fixing permission errors, managing processes and packages, and composing commands with pipes and redirection.\n\nIt is deliberately practical. Each lesson ends with things to try in a real terminal — on Ubuntu, in WSL on Windows, or in a `docker run -it ubuntu bash` container.",
+ "objectives": [
+  "Navigate and modify the filesystem confidently with absolute and relative paths.",
+  "Read and search logs and code with less, tail, grep and find.",
+  "Read and set permissions and ownership, and diagnose Permission denied.",
+  "Inspect and stop processes, and manage services and packages.",
+  "Compose commands using pipes, redirection, exit codes and environment variables."
+ ],
+ "concepts": [
+  [
+   "Kernel",
+   "The core of the OS that manages hardware, processes and memory."
+  ],
+  [
+   "Filesystem tree",
+   "One hierarchy rooted at `/`."
+  ],
+  [
+   "Permissions",
+   "rwx for owner, group and others."
+  ],
+  [
+   "Process",
+   "A running program with a PID."
+  ],
+  [
+   "Streams",
+   "stdin, stdout, stderr, combined with pipes and redirection."
+  ]
+ ],
+ "notes": [
+  "Practice in a disposable container: `docker run -it --rm ubuntu bash`.",
+  "`man command` or `command --help` documents every flag.",
+  "Never fix permission errors with `chmod 777` or by running everything as root."
+ ],
+ "checkpoints": {
+  "explain": [
+   "What a distribution adds on top of the kernel",
+   "What `-rwxr-x---` means",
+   "SIGTERM vs SIGKILL"
+  ],
+  "use": [
+   "Find the 10 largest files under a directory",
+   "Follow a service's log live",
+   "Make a script executable and run it"
+  ],
+  "debug": [
+   "A Permission denied error on a script or directory",
+   "A process stuck at 100% CPU",
+   "A cron job that can't find a command"
+  ],
+  "build": [
+   "A shell one-liner that summarizes a log file",
+   "A small setup script that creates a project layout"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Log detective",
+   "goal": "Practice the viewing/searching/piping toolkit on a real log.",
+   "steps": [
+    "Get a log: `journalctl -n 2000 > sys.log` (or any /var/log file).",
+    "Count lines containing 'error' (any case) with grep.",
+    "Show the 5 most common words in error lines using `tr`, `sort`, `uniq -c`, `sort -rn`, `head`.",
+    "Save the result to `report.txt` and append the date with `date >> report.txt`."
+   ]
+  },
+  {
+   "title": "Permission lab",
+   "goal": "Feel how r, w and x behave on files and directories.",
+   "steps": [
+    "Create `lab/secret.txt` and run `chmod 600` on it.",
+    "Create a script `hello.sh` that echoes text; try running it before and after `chmod u+x`.",
+    "Set `chmod 100 lab` (execute only) and try `ls lab` vs `cat lab/secret.txt`. Explain the result.",
+    "Restore with `chmod 755 lab`."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "What Linux is, distributions, and the shell",
+   "minutes": 12,
+   "summary": "The kernel, distributions, and how the terminal and shell fit together.",
+   "simple": "Linux is the operating system that runs most servers, containers and cloud machines. You talk to it through a **shell**: a program that reads the commands you type and runs them.",
+   "technical": "Strictly, **Linux** is the *kernel*: the core program that manages CPU scheduling, memory, devices, filesystems and networking. A **distribution** (Ubuntu, Debian, Fedora, Alpine, Arch) bundles that kernel with GNU tools, a package manager, an init system (usually systemd) and defaults.\n\n- **Debian/Ubuntu** use `apt` and `.deb` packages. Very common on servers and in Docker base images.\n- **Fedora/RHEL/Rocky** use `dnf` and `.rpm` packages. Common in enterprises.\n- **Alpine** uses `apk` and musl libc. Tiny, popular for containers.\n\nThe **terminal** (terminal emulator) is the window. The **shell** (bash, zsh, sh) is the program inside it that parses your input. A command line is split into a command and arguments: in `ls -l /etc`, `ls` is the program, `-l` is an option, `/etc` is an argument. The shell finds programs by searching the directories listed in the `PATH` environment variable.\n\nEverything on Linux is permission-checked against a **user**. `root` (UID 0) can do anything; you normally work as a regular user and use `sudo` for single privileged commands.",
+   "analogy": "The kernel is a restaurant's kitchen, the distribution is the whole restaurant (menu, staff, decor), and the shell is the waiter who takes your exact order and passes it to the kitchen.",
+   "example": {
+    "lang": "bash",
+    "code": "$ whoami            # which user am I?\nalice\n$ uname -r          # kernel version\n6.5.0-27-generic\n$ cat /etc/os-release | head -2\nPRETTY_NAME=\"Ubuntu 22.04.4 LTS\"\nNAME=\"Ubuntu\"\n$ echo $SHELL       # which shell\n/bin/bash\n$ which python3     # where PATH finds a program\n/usr/bin/python3",
+    "explain": "`uname` reports the kernel, `/etc/os-release` reports the distribution: two different layers. `which` shows which file the shell will actually run."
+   },
+   "terms": [
+    [
+     "Kernel",
+     "Core of the OS: processes, memory, devices, filesystems, networking."
+    ],
+    [
+     "Distribution",
+     "Kernel + userland tools + package manager + defaults."
+    ],
+    [
+     "Shell",
+     "Command interpreter such as bash or zsh."
+    ],
+    [
+     "PATH",
+     "Colon-separated list of directories the shell searches for commands."
+    ],
+    [
+     "root",
+     "The superuser, UID 0."
+    ]
+   ],
+   "remember": [
+    "Linux = kernel; Ubuntu/Debian/Alpine = distributions.",
+    "The shell parses command, options and arguments.",
+    "Use `sudo` for one privileged command instead of working as root."
+   ],
+   "mistakes": [
+    "Running everything as root \"to avoid permission errors\".",
+    "Confusing the terminal (window) with the shell (interpreter).",
+    "Assuming every distro uses `apt` — Alpine uses `apk`, Fedora uses `dnf`."
+   ],
+   "interview": [
+    "What is the difference between the Linux kernel and a distribution?",
+    "How does the shell find the program when you type `python3`?"
+   ],
+   "practice": [
+    "Can you explain: what happens between pressing Enter and the program running?",
+    "Can you use: find your kernel version, distro name and shell on any machine."
+   ],
+   "id": "linux-intro-shell"
+  },
+  {
+   "title": "Filesystem and navigation: pwd, ls, cd, mkdir, touch, cp, mv, rm",
+   "minutes": 15,
+   "summary": "The directory tree and the commands that move around and change it.",
+   "simple": "Linux has a single directory tree starting at `/`. You are always \"in\" a directory, and commands that move, copy and delete files work relative to it.",
+   "technical": "Important top-level directories: `/home` (user files), `/etc` (configuration), `/var` (logs, data that changes: `/var/log`), `/usr` (installed programs), `/tmp` (temporary), `/bin` and `/sbin` (essential binaries), `/dev` (devices), `/proc` (live kernel/process info).\n\n**Absolute paths** start at `/` (`/etc/nginx/nginx.conf`). **Relative paths** start from the current directory (`../logs`). `.` is the current directory, `..` the parent, `~` your home.\n\n- `pwd` prints the working directory. `cd dir` changes it; `cd` alone goes home; `cd -` goes back.\n- `ls -la` lists all files (including hidden dotfiles) in long format: permissions, owner, size, date.\n- `mkdir -p a/b/c` creates nested directories without failing if they exist.\n- `touch file` creates an empty file or updates its timestamp.\n- `cp src dst` copies; `cp -r dir1 dir2` copies a directory recursively.\n- `mv src dst` moves **or renames** (same operation).\n- `rm file` deletes; `rm -r dir` deletes recursively. There is no recycle bin.\n\n`rm -rf` never asks. A stray space — `rm -rf / tmp/x` instead of `rm -rf /tmp/x` — can destroy a system. Check paths with `ls` first.",
+   "analogy": "The filesystem is a building. `/` is the lobby, directories are floors and rooms, an absolute path is a full street address, and a relative path is \"two doors down from where you're standing\".",
+   "example": {
+    "lang": "bash",
+    "code": "$ cd ~ && pwd\n/home/alice\n$ mkdir -p projects/api/src\n$ cd projects/api\n$ touch README.md src/app.py\n$ cp README.md README.bak\n$ mv README.bak docs.md        # rename\n$ ls -la\ndrwxr-xr-x 3 alice alice 4096 Mar 3 10:00 .\ndrwxr-xr-x 3 alice alice 4096 Mar 3 10:00 ..\n-rw-r--r-- 1 alice alice    0 Mar 3 10:00 README.md\n-rw-r--r-- 1 alice alice    0 Mar 3 10:00 docs.md\ndrwxr-xr-x 2 alice alice 4096 Mar 3 10:00 src\n$ rm docs.md",
+    "explain": "`mkdir -p` built the whole chain in one go. `mv` did a rename. The first column of `ls -la` (`d` vs `-`) tells you directory vs file."
+   },
+   "terms": [
+    [
+     "Absolute path",
+     "Path from the root, e.g. `/var/log/syslog`."
+    ],
+    [
+     "Relative path",
+     "Path from the current directory, e.g. `../src`."
+    ],
+    [
+     "Hidden file",
+     "Name starting with `.`; shown by `ls -a`."
+    ],
+    [
+     "Recursive (-r)",
+     "Apply the operation to a directory and everything inside it."
+    ]
+   ],
+   "remember": [
+    "`mv` both moves and renames.",
+    "`rm` is permanent; double-check before `rm -rf`.",
+    "`/etc` = config, `/var/log` = logs, `/home` = users."
+   ],
+   "mistakes": [
+    "Forgetting `-r` when copying or deleting a directory.",
+    "Using relative paths in scripts/cron, which run from a different directory.",
+    "Spaces in filenames without quotes: `rm my file` deletes two files."
+   ],
+   "interview": [
+    "What's the difference between an absolute and relative path?",
+    "Why might `cp -r` and `rm -r` be dangerous in scripts?"
+   ],
+   "practice": [
+    "Can you use: build `~/lab/{logs,src}` and move a file between them using only relative paths?",
+    "Can you debug: a script works from your home directory but fails from cron. Why?"
+   ],
+   "id": "linux-files-navigation"
+  },
+  {
+   "title": "Viewing and searching: cat, less, grep, find",
+   "minutes": 14,
+   "summary": "Read files, page through logs, search text and locate files.",
+   "simple": "Most debugging on a server is reading files and logs. `cat` and `less` show files; `grep` searches inside them; `find` searches for files themselves.",
+   "technical": "- `cat file` prints the whole file. Fine for short files; useless for a 2 GB log.\n- `less file` pages through: Space/b to scroll, `/word` to search, `n` for next match, `G` to the end, `q` to quit.\n- `head -n 20 file` and `tail -n 50 file` show the start/end. `tail -f /var/log/app.log` **follows** new lines live — essential for watching a running service.\n- `grep \"ERROR\" app.log` prints matching lines. Useful flags: `-i` ignore case, `-n` line numbers, `-r` recursive through directories, `-v` invert (non-matching), `-c` count, `-E` extended regex.\n- `find /var/log -name \"*.log\" -mtime -1` finds files by name and age (modified in the last day). Other tests: `-type f`/`-type d`, `-size +100M`. `-exec cmd {} \\;` runs a command on each result.\n\nRule of thumb: **grep searches contents, find searches names and metadata.**",
+   "analogy": "`find` is the library catalog (which book, which shelf). `grep` is reading every page of the books on a shelf looking for one phrase.",
+   "example": {
+    "lang": "bash",
+    "code": "$ tail -n 3 /var/log/app.log\n2024-03-03 10:01:12 INFO  request ok\n2024-03-03 10:01:13 ERROR db timeout\n2024-03-03 10:01:15 INFO  request ok\n$ grep -n -i \"error\" /var/log/app.log | head\n1842:2024-03-03 10:01:13 ERROR db timeout\n$ grep -rn \"DATABASE_URL\" ./src\n./src/settings.py:12:DATABASE_URL = os.environ[\"DATABASE_URL\"]\n$ find . -type f -name \"*.py\" -size +100k\n./src/generated/schema.py",
+    "explain": "`grep -rn` across a project is the fastest way to find where a setting is used. `find` filtered by type, name and size at once."
+   },
+   "terms": [
+    [
+     "tail -f",
+     "Follow a file and print new lines as they are written."
+    ],
+    [
+     "grep -r",
+     "Search recursively through a directory tree."
+    ],
+    [
+     "Regex",
+     "Pattern language used by grep, e.g. `^ERROR` = lines starting with ERROR."
+    ],
+    [
+     "-exec",
+     "find option to run a command for each match."
+    ]
+   ],
+   "remember": [
+    "`less` for big files, `tail -f` for live logs.",
+    "grep = contents, find = file names/metadata.",
+    "`grep -rn` with line numbers is your project-wide search."
+   ],
+   "mistakes": [
+    "`cat`-ing huge log files and flooding the terminal.",
+    "Forgetting quotes around patterns with `*`, so the shell expands them first.",
+    "Using `find /` without limits and waiting minutes."
+   ],
+   "interview": [
+    "How would you watch an application's log while reproducing a bug?",
+    "How do you find all files over 100 MB under /var?"
+   ],
+   "practice": [
+    "Can you debug: find every line containing 'timeout' in today's logs with line numbers?",
+    "Can you use: delete `*.tmp` files older than 7 days with one find command?"
+   ],
+   "id": "linux-view-search"
+  },
+  {
+   "title": "Permissions and ownership: chmod, chown",
+   "minutes": 14,
+   "summary": "Read rwx permissions, change them with chmod, and change ownership with chown.",
+   "simple": "Every file has an **owner**, a **group**, and permissions saying who may **read**, **write** or **execute** it. Most \"Permission denied\" errors come from this.",
+   "technical": "`ls -l` shows `-rwxr-x---`. After the type character come three triplets: **user (owner)**, **group**, **others**. `r`=read, `w`=write, `x`=execute (for directories, `x` means \"may enter/traverse\").\n\nEach triplet is also a number: r=4, w=2, x=1, added together. So `rwx`=7, `r-x`=5, `r--`=4.\n- `chmod 755 script.sh` → owner rwx, group r-x, others r-x (typical for programs/directories).\n- `chmod 644 file.txt` → owner rw-, others read-only (typical for files).\n- `chmod 600 ~/.ssh/id_ed25519` → owner only (required for private keys).\n- Symbolic form: `chmod u+x deploy.sh`, `chmod go-w file`.\n\n`chown alice:www-data file` changes owner and group (needs root). `chown -R` applies recursively.\n\nTo run a script with `./script.sh` it needs `x`. `chmod 777` \"fixes\" errors by letting everyone write — a security hole, never the right answer on a server.",
+   "analogy": "A file is a room with three keyrings: one for the owner, one for their team (group), one for everyone else. Each keyring can open the door to look (r), to rearrange (w), or to use the equipment (x).",
+   "example": {
+    "lang": "bash",
+    "code": "$ ls -l deploy.sh\n-rw-r--r-- 1 alice dev 120 Mar 3 deploy.sh\n$ ./deploy.sh\nbash: ./deploy.sh: Permission denied\n$ chmod u+x deploy.sh\n$ ls -l deploy.sh\n-rwxr--r-- 1 alice dev 120 Mar 3 deploy.sh\n$ sudo chown -R www-data:www-data /var/www/app",
+    "explain": "The script lacked execute permission. `u+x` adds it only for the owner. Web server files are handed to the `www-data` user the web server runs as."
+   },
+   "terms": [
+    [
+     "Owner/Group/Others",
+     "The three classes permissions apply to."
+    ],
+    [
+     "Octal mode",
+     "Numeric permissions, e.g. 644, 755, 600."
+    ],
+    [
+     "Execute on directory",
+     "Permission to enter it and access names inside."
+    ],
+    [
+     "chown",
+     "Change file owner and group."
+    ]
+   ],
+   "remember": [
+    "r=4, w=2, x=1; 644 files, 755 dirs/scripts, 600 secrets.",
+    "Directories need `x` to be entered.",
+    "Never use 777 to fix a permission problem."
+   ],
+   "mistakes": [
+    "`chmod 777` as a fix.",
+    "Forgetting `-R` when a whole tree needs a new owner.",
+    "Private SSH key with 644 permissions — SSH refuses to use it."
+   ],
+   "interview": [
+    "What does `chmod 640 file` mean in words?",
+    "A web server can't read files under /var/www. How do you investigate?"
+   ],
+   "practice": [
+    "Can you explain: why can you read a file but not `cd` into its parent directory?",
+    "Can you use: make a script executable only by its owner."
+   ],
+   "id": "linux-permissions"
+  },
+  {
+   "title": "Processes and packages: ps, top, kill, apt",
+   "minutes": 14,
+   "summary": "See what's running, stop it, and install software with a package manager.",
+   "simple": "Every running program is a **process** with a numeric ID (PID). You can list processes, watch resource use, and send them signals to stop. Software is installed through the distro's **package manager**.",
+   "technical": "- `ps aux` lists all processes with user, PID, CPU%, MEM%, command. Combine: `ps aux | grep gunicorn`.\n- `top` (or `htop`) shows live CPU/memory usage; press `q` to quit. Load average shows how many processes want CPU.\n- `kill PID` sends **SIGTERM (15)**: \"please shut down\" — the program can clean up. `kill -9 PID` sends **SIGKILL**: the kernel stops it immediately, no cleanup. Try SIGTERM first.\n- `pkill -f name` kills by matching the command line. `Ctrl+C` sends SIGINT to the foreground program.\n- `command &` runs in the background; `jobs`, `fg` bring it back.\n- Services (long-running daemons) are managed by systemd: `systemctl status nginx`, `systemctl restart nginx`, logs via `journalctl -u nginx -f`.\n\nPackage management (Debian/Ubuntu): `sudo apt update` refreshes the package index; `sudo apt install postgresql` installs with dependencies; `apt remove` uninstalls; `apt upgrade` upgrades installed packages. Packages come from signed repositories, which is safer than downloading random binaries.",
+   "analogy": "SIGTERM is telling an employee \"please finish up and go home\". SIGKILL is security physically escorting them out mid-sentence — fast, but they don't save their work.",
+   "example": {
+    "lang": "bash",
+    "code": "$ ps aux | grep \"[p]ython\"\nalice  4211  97.0  2.1 ... python worker.py\n$ kill 4211            # polite SIGTERM\n$ ps -p 4211 || echo \"gone\"\ngone\n$ sudo apt update && sudo apt install -y htop\n$ systemctl status postgresql --no-pager | head -3",
+    "explain": "`[p]ython` is a trick so grep doesn't match its own process line. SIGTERM was enough; no need for -9."
+   },
+   "terms": [
+    [
+     "PID",
+     "Process ID."
+    ],
+    [
+     "Signal",
+     "Message to a process: SIGTERM (15), SIGKILL (9), SIGINT (2)."
+    ],
+    [
+     "Daemon/service",
+     "Long-running background process, usually managed by systemd."
+    ],
+    [
+     "apt update vs upgrade",
+     "update refreshes the list; upgrade installs newer versions."
+    ]
+   ],
+   "remember": [
+    "`kill` = SIGTERM first; `kill -9` only if it won't stop.",
+    "`systemctl` manages services, `journalctl -u` shows their logs.",
+    "`apt update` before `apt install`."
+   ],
+   "mistakes": [
+    "Reaching for `kill -9` immediately, losing data that graceful shutdown would have saved.",
+    "Forgetting `apt update`, getting 'package not found'.",
+    "Restarting a service without reading its logs first."
+   ],
+   "interview": [
+    "What's the difference between SIGTERM and SIGKILL?",
+    "A server's CPU is at 100%. What do you run first?"
+   ],
+   "practice": [
+    "Can you debug: find which process is using the most memory and stop it gracefully?",
+    "Can you use: install, start and check the status of a service with systemctl."
+   ],
+   "id": "linux-processes-packages"
+  },
+  {
+   "title": "Pipes, redirection and environment variables",
+   "minutes": 14,
+   "summary": "Chain commands with |, send output to files with > and 2>, and use environment variables.",
+   "simple": "Linux commands are small tools you combine. A **pipe** sends one command's output into the next. **Redirection** sends output to a file. **Environment variables** pass settings to programs.",
+   "technical": "Every process has three standard streams: **stdin (0)**, **stdout (1)**, **stderr (2)**.\n- `cmd > out.txt` writes stdout to a file (overwrites). `>>` appends.\n- `cmd 2> err.txt` redirects stderr. `cmd > all.log 2>&1` sends both to one file.\n- `cmd < input.txt` reads stdin from a file.\n- `cmd1 | cmd2` connects cmd1's stdout to cmd2's stdin. Only stdout goes through the pipe by default.\n\nClassic pipeline: `cat access.log | cut -d' ' -f1 | sort | uniq -c | sort -rn | head` → top client IPs.\n\n**Environment variables** are key=value pairs inherited by child processes. `echo $HOME`, `env` lists them. `export API_URL=http://localhost:8000` sets one for this shell and its children. `VAR=x cmd` sets it for one command only. Put permanent ones in `~/.bashrc`. `PATH` is the most important: `export PATH=\"$HOME/.local/bin:$PATH\"`.\n\nExit codes: 0 means success, anything else failure. `echo $?` shows the last one. `cmd1 && cmd2` runs cmd2 only if cmd1 succeeded; `||` only if it failed.",
+   "analogy": "Pipes are an assembly line: each worker does one job and passes the part along. Redirection is deciding whether the finished part goes to the shelf (a file) or the display window (your screen).",
+   "example": {
+    "lang": "bash",
+    "code": "$ cut -d' ' -f1 access.log | sort | uniq -c | sort -rn | head -3\n   412 10.0.0.7\n   198 10.0.0.12\n    77 172.17.0.1\n$ python manage.py migrate > migrate.log 2>&1 && echo \"ok\" || echo \"failed\"\nok\n$ export DJANGO_DEBUG=0\n$ DJANGO_DEBUG=1 python -c \"import os; print(os.environ['DJANGO_DEBUG'])\"\n1",
+    "explain": "Five small tools answered \"who hits us most?\". `2>&1` captured errors too. The one-command assignment overrode the exported value only for that run."
+   },
+   "terms": [
+    [
+     "stdout/stderr",
+     "Normal output (1) and error output (2)."
+    ],
+    [
+     "Pipe |",
+     "Connects stdout of one command to stdin of the next."
+    ],
+    [
+     "2>&1",
+     "Send stderr to wherever stdout currently goes."
+    ],
+    [
+     "export",
+     "Make a variable visible to child processes."
+    ],
+    [
+     "Exit code",
+     "0 = success, non-zero = failure."
+    ]
+   ],
+   "remember": [
+    "`>` overwrites, `>>` appends.",
+    "Order matters: `> file 2>&1`, not `2>&1 > file`.",
+    "Children inherit exported env vars; parents never see a child's changes."
+   ],
+   "mistakes": [
+    "Expecting errors to go through a pipe (they go to stderr).",
+    "`> config.txt` on the file you're reading: it's truncated before reading.",
+    "Setting a variable without `export` and wondering why the program can't see it."
+   ],
+   "interview": [
+    "Explain `cmd > out.log 2>&1`.",
+    "Why does `export` matter for a variable used by Python?"
+   ],
+   "practice": [
+    "Can you build: a one-liner that counts ERROR lines per hour in a log?",
+    "Can you debug: a cron job can't find `python`. What's different about its PATH?"
+   ],
+   "id": "linux-pipes-env"
+  }
+ ]
+}

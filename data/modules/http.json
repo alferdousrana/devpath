@@ -1,0 +1,298 @@
+{
+ "id": "http",
+ "trackId": "backend",
+ "title": "HTTP / HTTPS",
+ "tagline": "The protocol every API call, page load and webhook travels on.",
+ "overview": "Every endpoint you build speaks HTTP, and every production deployment speaks HTTPS. Understanding the protocol makes debugging dramatically faster: most \"the API is broken\" problems are a header, a status code, a cookie attribute, a certificate or a proxy setting.",
+ "objectives": [
+  "Read and write raw HTTP requests and responses.",
+  "Use status codes, cookies and sessions correctly.",
+  "Explain how TLS secures HTTPS and how certificates are verified.",
+  "Compare HTTP/1.1, HTTP/2 and HTTP/3."
+ ],
+ "concepts": [
+  [
+   "Request/response",
+   "The basic HTTP exchange."
+  ],
+  [
+   "Header",
+   "Metadata on a message."
+  ],
+  [
+   "Cookie",
+   "Client-stored value sent back automatically."
+  ],
+  [
+   "TLS",
+   "Security layer under HTTPS."
+  ],
+  [
+   "QUIC",
+   "UDP-based transport for HTTP/3."
+  ]
+ ],
+ "notes": [
+  "Debug with `curl -v` and the browser's Network tab.",
+  "Status codes are part of your API contract.",
+  "HTTPS everywhere, with automated certificates."
+ ],
+ "checkpoints": {
+  "explain": [
+   "Parts of an HTTP message",
+   "Sessions vs tokens",
+   "TLS handshake at a high level"
+  ],
+  "use": [
+   "curl with headers and JSON",
+   "Secure cookie attributes",
+   "openssl certificate inspection"
+  ],
+  "debug": [
+   "415, 401 vs 403, redirect loops",
+   "Cookie not being sent",
+   "Mixed HTTPS/HTTP behind a proxy"
+  ],
+  "build": [
+   "A tiny HTTP server with Python's http.server to inspect raw requests"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Raw HTTP",
+   "goal": "See HTTP without libraries.",
+   "steps": [
+    "Run `python -m http.server 8000` and request it with `curl -v`.",
+    "Use `nc` (netcat) to type a raw `GET / HTTP/1.1` request with a Host header.",
+    "Compare headers sent by curl and by your browser (DevTools → Network)."
+   ]
+  },
+  {
+   "title": "Cookie lab",
+   "goal": "Watch session cookies in action.",
+   "steps": [
+    "Log into a local Django admin.",
+    "Inspect the sessionid cookie attributes in DevTools.",
+    "Delete the session row in the database and reload: you're logged out."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "Client/server, requests, responses, headers and body",
+   "minutes": 14,
+   "summary": "The anatomy of an HTTP message and how clients and servers exchange them.",
+   "simple": "HTTP is the request–response protocol of the web. A **client** (browser, mobile app, `curl`, another service) sends a **request**; a **server** returns a **response**. Both are text-structured messages with a start line, **headers**, and an optional **body**.",
+   "technical": "A request has:\n- **Request line**: method, path, version — `GET /api/orders?page=2 HTTP/1.1`\n- **Headers**: `Host: api.example.com` (required in 1.1), `Accept: application/json`, `Content-Type`, `Authorization`, `User-Agent`, `Cookie`.\n- **Body** (for POST/PUT/PATCH): e.g. JSON, with `Content-Type: application/json` and `Content-Length`.\n\nA response has:\n- **Status line**: `HTTP/1.1 200 OK`\n- **Headers**: `Content-Type`, `Content-Length`, `Cache-Control`, `Set-Cookie`, `Location`, CORS headers like `Access-Control-Allow-Origin`.\n- **Body**: the representation.\n\nHTTP itself is **stateless**: every request stands alone. State (logins, carts) is layered on with cookies or tokens.\n\nMethods: GET (read), POST (create/act), PUT (replace), PATCH (partial update), DELETE, HEAD (headers only), OPTIONS (capabilities; used by CORS preflight).\n\n`curl -v` shows the full exchange and is the best HTTP debugging tool you have.",
+   "analogy": "An HTTP request is a letter: the envelope has the address and method of delivery (request line), the stamps and notes are headers, and the letter inside is the body. The reply comes back with a status stamped on the front.",
+   "example": {
+    "lang": "bash",
+    "code": "$ curl -v -X POST https://api.example.com/v1/orders \\\n    -H \"Content-Type: application/json\" \\\n    -H \"Authorization: Bearer eyJ...\" \\\n    -d '{\"product_id\": 7, \"qty\": 2}'\n> POST /v1/orders HTTP/1.1\n> Host: api.example.com\n> Content-Type: application/json\n> Content-Length: 27\n>\n< HTTP/1.1 201 Created\n< Content-Type: application/json\n< Location: /v1/orders/981\n<\n{\"id\": 981, \"status\": \"new\"}",
+    "explain": "Lines starting with `>` were sent; `<` were received. You can see method, path, headers, body, status and the Location of the new resource."
+   },
+   "terms": [
+    [
+     "Request line",
+     "Method, target, version."
+    ],
+    [
+     "Header",
+     "Key–value metadata on a message."
+    ],
+    [
+     "Body",
+     "Message payload."
+    ],
+    [
+     "Content-Type",
+     "Media type of the body."
+    ],
+    [
+     "Stateless",
+     "Each request independent of previous ones."
+    ]
+   ],
+   "remember": [
+    "Request = line + headers + body; response = status + headers + body.",
+    "Content-Type tells the receiver how to parse the body.",
+    "`curl -v` shows everything."
+   ],
+   "mistakes": [
+    "Sending JSON without `Content-Type: application/json`.",
+    "Putting sensitive data in query strings (logged everywhere).",
+    "Assuming HTTP remembers previous requests."
+   ],
+   "interview": [
+    "Walk through the parts of an HTTP request.",
+    "Why is HTTP called stateless?"
+   ],
+   "practice": [
+    "Can you use: send a JSON POST with curl and read the response headers?",
+    "Can you debug: a 415 Unsupported Media Type response."
+   ],
+   "id": "http-request-response"
+  },
+  {
+   "title": "Status codes, cookies and sessions",
+   "minutes": 14,
+   "summary": "Status code classes, how cookies work, and how sessions add state to HTTP.",
+   "simple": "**Status codes** summarize the result in three digits. **Cookies** are small values the server asks the browser to store and send back. **Sessions** use a cookie with an ID to remember a user across requests.",
+   "technical": "Status classes: **1xx** informational, **2xx** success (200, 201, 204), **3xx** redirection (301 permanent, 302/307 temporary, 304 Not Modified for caching), **4xx** client error (400, 401, 403, 404, 405, 409, 429), **5xx** server error (500, 502, 503, 504).\n\n**Cookies**: the server sends `Set-Cookie: sessionid=abc123; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=1209600`. The browser stores it and sends `Cookie: sessionid=abc123` with matching requests.\n- `HttpOnly`: JavaScript can't read it (limits XSS token theft).\n- `Secure`: only sent over HTTPS.\n- `SameSite=Lax/Strict/None`: controls cross-site sending; key defense against CSRF.\n- `Domain`, `Path`, `Expires/Max-Age` scope it.\n\n**Sessions**: after login the server creates a session record (in DB/Redis) and sends only a random ID in a cookie. Each request, it looks the ID up to find the user. Logout deletes the record — instant revocation. Contrast with JWTs, which carry claims themselves and are hard to revoke before expiry.\n\nBecause browsers send cookies automatically, cookie-based auth needs **CSRF protection** (tokens + SameSite) for state-changing requests.",
+   "analogy": "A session cookie is a coat-check ticket. The ticket itself is worthless; the cloakroom (server) keeps your coat (session data) and matches the number. Lose the ticket or the cloakroom throws away the coat, and you're logged out.",
+   "example": {
+    "lang": "http",
+    "code": "POST /login HTTP/1.1\nContent-Type: application/x-www-form-urlencoded\n\nusername=ana&password=********\n\nHTTP/1.1 302 Found\nLocation: /dashboard\nSet-Cookie: sessionid=k3j9x1...; HttpOnly; Secure; SameSite=Lax; Path=/\n\nGET /dashboard HTTP/1.1\nCookie: sessionid=k3j9x1...\n\nHTTP/1.1 200 OK",
+    "explain": "Login sets a session cookie and redirects. The browser automatically attaches the cookie to the next request, which is how the server knows it's Ana."
+   },
+   "terms": [
+    [
+     "3xx redirect",
+     "Response telling the client to go to Location."
+    ],
+    [
+     "Set-Cookie",
+     "Response header instructing the browser to store a cookie."
+    ],
+    [
+     "HttpOnly / Secure / SameSite",
+     "Cookie security attributes."
+    ],
+    [
+     "Session",
+     "Server-side state keyed by an ID in a cookie."
+    ],
+    [
+     "CSRF",
+     "Attack abusing automatically-sent cookies."
+    ]
+   ],
+   "remember": [
+    "Session = random ID in cookie + data on server.",
+    "Auth cookies: HttpOnly, Secure, SameSite.",
+    "Cookies are auto-sent → protect against CSRF."
+   ],
+   "mistakes": [
+    "Storing user data (like role) in a plain cookie the client can edit.",
+    "Auth cookies without Secure on HTTPS sites.",
+    "Returning 200 for errors."
+   ],
+   "interview": [
+    "How does a session-based login work?",
+    "What do HttpOnly and SameSite protect against?"
+   ],
+   "practice": [
+    "Can you explain: session cookies vs JWT for a web app?",
+    "Can you debug: users get logged out on every request (cookie domain/Secure on HTTP)."
+   ],
+   "id": "http-status-cookies"
+  },
+  {
+   "title": "HTTPS, TLS basics and certificates",
+   "minutes": 15,
+   "summary": "How HTTPS keeps traffic private and proves server identity.",
+   "simple": "**HTTPS** is HTTP sent inside a **TLS** connection. TLS **encrypts** traffic (no eavesdropping), protects **integrity** (no tampering), and **authenticates** the server with a certificate (you're talking to the real site).",
+   "technical": "Simplified TLS 1.3 handshake:\n1. Client sends **ClientHello**: supported versions/ciphers and a key share; SNI names the hostname.\n2. Server replies with its key share and its **certificate**, plus a signature proving it holds the private key.\n3. Both derive the same **symmetric session keys** (via ephemeral Diffie–Hellman). Asymmetric crypto is used to authenticate and agree keys; fast symmetric crypto (AES-GCM, ChaCha20) encrypts the data.\n\n**Certificates** (X.509) bind a domain name to a public key, signed by a **Certificate Authority (CA)**. The browser verifies the chain: site cert → intermediate → trusted root in the OS/browser store, and checks the hostname matches and the cert hasn't expired.\n\nPracticalities:\n- **Let's Encrypt** issues free 90-day certificates; automate renewal (certbot, Caddy, or your load balancer/CDN).\n- TLS is often **terminated** at a reverse proxy (nginx, a load balancer); traffic behind it may be plain HTTP inside a private network. Django then needs `SECURE_PROXY_SSL_HEADER` to know the original request was HTTPS.\n- Redirect HTTP → HTTPS and send **HSTS** (`Strict-Transport-Security`) so browsers refuse plain HTTP next time.\n\nHTTPS hides paths, headers and bodies, but not the IP address or (usually) the hostname via SNI/DNS.",
+   "analogy": "A certificate is a passport: issued by a trusted government (CA), it ties a name (domain) to a face (public key). TLS is then speaking in a private code that only you and the verified passport holder agreed on.",
+   "example": {
+    "lang": "bash",
+    "code": "$ openssl s_client -connect example.com:443 -servername example.com </dev/null 2>/dev/null \\\n    | openssl x509 -noout -subject -issuer -dates\nsubject=CN = example.com\nissuer=C = US, O = DigiCert Inc, CN = DigiCert Global G2 TLS RSA SHA256 2020 CA1\nnotBefore=Jan 13 00:00:00 2024 GMT\nnotAfter=Feb 13 23:59:59 2025 GMT\n\n$ curl -I https://example.com | grep -i strict\nstrict-transport-security: max-age=31536000",
+    "explain": "You can inspect who a certificate was issued to, which CA signed it, and when it expires — the first checks when browsers show certificate errors."
+   },
+   "terms": [
+    [
+     "TLS",
+     "Protocol providing encryption, integrity and authentication."
+    ],
+    [
+     "Certificate",
+     "Signed binding of a domain to a public key."
+    ],
+    [
+     "CA",
+     "Trusted issuer of certificates."
+    ],
+    [
+     "TLS termination",
+     "Decrypting at a proxy before forwarding."
+    ],
+    [
+     "HSTS",
+     "Header forcing HTTPS on future visits."
+    ]
+   ],
+   "remember": [
+    "TLS = encryption + integrity + server authentication.",
+    "Asymmetric keys for the handshake, symmetric keys for data.",
+    "Automate certificate renewal."
+   ],
+   "mistakes": [
+    "Letting certificates expire (outages).",
+    "Disabling certificate verification (`verify=False`) in production code.",
+    "Mixed content: HTTPS pages loading HTTP scripts."
+   ],
+   "interview": [
+    "What does a certificate prove, and who vouches for it?",
+    "Why does TLS use both asymmetric and symmetric cryptography?"
+   ],
+   "practice": [
+    "Can you use: inspect a site's certificate chain and expiry with openssl?",
+    "Can you debug: Django builds http:// URLs behind an HTTPS load balancer."
+   ],
+   "id": "http-https-tls"
+  },
+  {
+   "title": "HTTP/1.1, HTTP/2 and HTTP/3",
+   "minutes": 12,
+   "summary": "How HTTP versions differ in connections, multiplexing and transport.",
+   "simple": "The meaning of HTTP (methods, headers, status codes) stays the same across versions. What changes is how messages travel: **HTTP/1.1** is text over TCP, **HTTP/2** is binary and multiplexed over TCP, **HTTP/3** runs over **QUIC** on UDP.",
+   "technical": "**HTTP/1.1** (1997): persistent keep-alive connections, but one request at a time per connection; a slow response blocks the ones behind it (**head-of-line blocking** at the HTTP layer). Browsers open ~6 connections per host to compensate. Headers are repetitive plain text.\n\n**HTTP/2** (2015): binary framing, **multiplexing** many concurrent streams over a single TCP connection, **HPACK** header compression, stream prioritization. Almost always over TLS in practice. It removes HTTP-level head-of-line blocking — but one lost TCP packet still stalls **all** streams, because TCP delivers bytes strictly in order.\n\n**HTTP/3** (2022): HTTP over **QUIC**, a transport on **UDP** with built-in TLS 1.3. Streams are independent at the transport level, so a lost packet only stalls its own stream. Faster connection setup (fewer round trips, 0-RTT resumption) and **connection migration** (survives switching from Wi-Fi to mobile data, thanks to connection IDs instead of IP/port tuples).\n\nFor backend engineers: your Django app usually speaks HTTP/1.1 to a reverse proxy/CDN, which speaks HTTP/2 or HTTP/3 to clients. gRPC is built on HTTP/2.",
+   "analogy": "HTTP/1.1 is a single-lane road: one slow truck blocks everyone. HTTP/2 is many lanes painted on one road, but a pothole (lost packet) still closes the whole road. HTTP/3 gives each lane its own road surface.",
+   "example": {
+    "lang": "bash",
+    "code": "$ curl -sI --http2 https://www.google.com | head -1\nHTTP/2 200\n$ curl -sI --http3 https://www.cloudflare.com | head -1     # needs curl built with HTTP/3\nHTTP/3 200\n$ curl -sI --http1.1 https://example.com | head -1\nHTTP/1.1 200 OK",
+    "explain": "Same resource, same semantics, different wire protocols negotiated with the server (via TLS ALPN, and Alt-Svc for HTTP/3)."
+   },
+   "terms": [
+    [
+     "Head-of-line blocking",
+     "A delayed item blocks the ones queued behind it."
+    ],
+    [
+     "Multiplexing",
+     "Many streams interleaved over one connection."
+    ],
+    [
+     "HPACK/QPACK",
+     "Header compression for HTTP/2 and HTTP/3."
+    ],
+    [
+     "QUIC",
+     "UDP-based transport with built-in TLS and independent streams."
+    ],
+    [
+     "ALPN",
+     "TLS extension negotiating the HTTP version."
+    ]
+   ],
+   "remember": [
+    "Semantics are the same; transport differs.",
+    "HTTP/2 multiplexes over one TCP connection.",
+    "HTTP/3 = QUIC over UDP; fixes TCP-level head-of-line blocking."
+   ],
+   "mistakes": [
+    "Thinking HTTP/2 changes your REST design.",
+    "Believing HTTP/3 means 'unreliable UDP' — QUIC adds reliability itself.",
+    "Domain sharding and sprite hacks kept from HTTP/1.1 days."
+   ],
+   "interview": [
+    "What problem does HTTP/2 multiplexing solve, and what does it leave unsolved?",
+    "Why does HTTP/3 use UDP?"
+   ],
+   "practice": [
+    "Can you explain: head-of-line blocking at HTTP vs TCP level?",
+    "Can you use: check which HTTP version a site negotiates with curl."
+   ],
+   "id": "http-versions"
+  }
+ ]
+}

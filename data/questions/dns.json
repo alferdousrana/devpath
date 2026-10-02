@@ -1,0 +1,162 @@
+[
+ {
+  "topic": "Resolution",
+  "lesson": "dns-resolution",
+  "difficulty": "medium",
+  "question": "Which server holds the actual records for example.com?",
+  "options": [
+   "example.com's authoritative nameserver",
+   "The .com TLD server",
+   "The root server",
+   "Your laptop"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Root and TLD servers only refer you onward; the authoritative server answers.",
+  "id": "dns-q01",
+  "module": "dns"
+ },
+ {
+  "topic": "Caching",
+  "lesson": "dns-resolution",
+  "difficulty": "medium",
+  "question": "You changed an A record with TTL 86400, but users still reach the old IP hours later. Why?",
+  "options": [
+   "The browser blocks DNS",
+   "A records can't be changed",
+   "Resolvers cached the old answer for up to 24 hours (the TTL)",
+   "DNS changes need a server restart"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Lower the TTL well before planned changes.",
+  "id": "dns-q02",
+  "module": "dns"
+ },
+ {
+  "topic": "Resolution",
+  "lesson": "dns-resolution",
+  "difficulty": "easy",
+  "question": "What does a recursive resolver like 1.1.1.1 do?",
+  "options": [
+   "Resolves names on behalf of clients by querying the hierarchy, and caches results",
+   "Registers domains",
+   "Issues TLS certificates",
+   "Hosts your website"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Your device usually only talks to a recursive resolver.",
+  "id": "dns-q03",
+  "module": "dns"
+ },
+ {
+  "topic": "Records",
+  "lesson": "dns-records",
+  "difficulty": "easy",
+  "question": "Which record maps a name to an IPv6 address?",
+  "options": [
+   "TXT",
+   "MX",
+   "AAAA",
+   "A"
+  ],
+  "correctAnswer": 2,
+  "explanation": "A = IPv4, AAAA = IPv6.",
+  "id": "dns-q04",
+  "module": "dns"
+ },
+ {
+  "topic": "Records",
+  "lesson": "dns-records",
+  "difficulty": "medium",
+  "question": "Why can't the zone apex `example.com` normally be a CNAME?",
+  "options": [
+   "Apex domains need IPv6",
+   "CNAMEs are deprecated",
+   "A CNAME can't coexist with other records at the same name, and the apex must have SOA and NS records",
+   "MX requires it"
+  ],
+  "correctAnswer": 2,
+  "explanation": "DNS providers solve this with ALIAS/ANAME or CNAME flattening.",
+  "id": "dns-q05",
+  "module": "dns"
+ },
+ {
+  "topic": "Records",
+  "lesson": "dns-records",
+  "difficulty": "medium",
+  "question": "Where are SPF policies for email published?",
+  "options": [
+   "A records",
+   "MX records",
+   "TXT records",
+   "CNAME records"
+  ],
+  "correctAnswer": 2,
+  "explanation": "SPF, DKIM and DMARC are all TXT records.",
+  "id": "dns-q06",
+  "module": "dns"
+ },
+ {
+  "topic": "Records",
+  "lesson": "dns-records",
+  "difficulty": "medium",
+  "question": "Two MX records have priorities 10 and 20. Which mail server is tried first?",
+  "options": [
+   "Both simultaneously",
+   "Priority 10",
+   "Priority 20",
+   "Random"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Lower preference number = higher priority.",
+  "id": "dns-q07",
+  "module": "dns"
+ },
+ {
+  "topic": "Troubleshooting",
+  "lesson": "dns-troubleshooting",
+  "difficulty": "medium",
+  "question": "`dig app.example.com` returns status NXDOMAIN. What does that mean?",
+  "options": [
+   "The name does not exist in DNS",
+   "The firewall blocked port 443",
+   "The server is down",
+   "The certificate expired"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Check you created the record, in the zone that the domain is actually delegated to.",
+  "id": "dns-q08",
+  "module": "dns"
+ },
+ {
+  "topic": "Troubleshooting",
+  "lesson": "dns-troubleshooting",
+  "difficulty": "hard",
+  "question": "You added a record at a new DNS provider, but `dig` shows NXDOMAIN while `dig @ns1.newprovider.net` returns the right IP. Most likely cause?",
+  "options": [
+   "The record needs a trailing dot",
+   "TTL hasn't expired",
+   "The registrar still delegates the domain (NS records) to the old provider",
+   "IPv6 is disabled"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Update the nameservers at the registrar.",
+  "id": "dns-q09",
+  "module": "dns"
+ },
+ {
+  "topic": "Troubleshooting",
+  "lesson": "dns-troubleshooting",
+  "difficulty": "medium",
+  "question": "`dig` returns the correct IP but `curl https://api.example.com` times out. What's next?",
+  "options": [
+   "Add a TXT record",
+   "Lower the TTL",
+   "Treat it as connectivity: check the server, port, firewall/security group with curl -v or nc",
+   "Keep changing DNS"
+  ],
+  "correctAnswer": 2,
+  "explanation": "DNS has done its job once the right IP comes back.",
+  "id": "dns-q10",
+  "module": "dns"
+ }
+]

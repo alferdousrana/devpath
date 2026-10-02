@@ -1,0 +1,246 @@
+{
+ "id": "ssh",
+ "trackId": "backend",
+ "title": "SSH",
+ "tagline": "Secure remote access to every server you'll ever run.",
+ "overview": "SSH is how you reach servers, how Git talks to GitHub, and how many deployments move files. This module covers how SSH secures a connection, how key-based authentication actually works, everyday client usage including tunnels, file transfer, and hardening a server's SSH configuration.",
+ "objectives": [
+  "Explain the SSH client/server model and host key verification.",
+  "Explain public-key authentication and protect private keys.",
+  "Generate keys, install them, and use ~/.ssh/config and tunnels.",
+  "Transfer files with scp, sftp and rsync.",
+  "Harden sshd and the surrounding firewall."
+ ],
+ "concepts": [
+  [
+   "SSH",
+   "Encrypted remote shell protocol."
+  ],
+  [
+   "Key pair",
+   "Private + public key."
+  ],
+  [
+   "authorized_keys",
+   "Public keys allowed to log in."
+  ],
+  [
+   "known_hosts",
+   "Pinned server host keys."
+  ],
+  [
+   "Tunnel",
+   "Port forwarding through SSH."
+  ]
+ ],
+ "notes": [
+  "Use a passphrase and ssh-agent.",
+  "One key per device; revoke individually.",
+  "Never disable host key checking globally."
+ ],
+ "checkpoints": {
+  "explain": [
+   "Challenge–response with key pairs",
+   "Host key pinning",
+   "Local port forwarding"
+  ],
+  "use": [
+   "ssh-keygen + ssh-copy-id",
+   "~/.ssh/config aliases",
+   "rsync deploys"
+  ],
+  "debug": [
+   "Permission denied (publickey)",
+   "Host key changed warning",
+   "Locked out after config change"
+  ],
+  "build": [
+   "A hardened server you can deploy to with one rsync command"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Local SSH server",
+   "goal": "Practice safely with a container.",
+   "steps": [
+    "Run `docker run -d -p 2222:2222 -e USER_NAME=dev -e PUBLIC_KEY=\"$(cat ~/.ssh/id_ed25519.pub)\" lscr.io/linuxserver/openssh-server`.",
+    "Add a `Host lab` entry in ~/.ssh/config for port 2222.",
+    "Copy files with scp and rsync; compare transfer output.",
+    "Break authorized_keys permissions and diagnose with `ssh -v`."
+   ]
+  },
+  {
+   "title": "GitHub over SSH",
+   "goal": "Switch your repos to SSH remotes.",
+   "steps": [
+    "Add your public key in GitHub → Settings → SSH keys.",
+    "Test with `ssh -T git@github.com`.",
+    "Change a remote with `git remote set-url origin git@github.com:you/repo.git`."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "SSH fundamentals and key pairs",
+   "minutes": 14,
+   "summary": "How SSH gives you an encrypted shell on a remote machine, and how public-key authentication works.",
+   "simple": "**SSH** (Secure Shell) lets you log into and run commands on a remote server over an encrypted connection. Instead of passwords, you normally authenticate with a **key pair**: a private key you keep, and a public key you put on the server.",
+   "technical": "Architecture: an **SSH client** (`ssh`) connects to an **SSH server** daemon (`sshd`) on TCP **port 22**. On first connection the server presents its **host key**; the client shows its fingerprint and stores it in `~/.ssh/known_hosts`. If it ever changes unexpectedly you get a loud warning — possibly a man-in-the-middle, or just a rebuilt server.\n\nAfter key exchange, everything (login, commands, output, file transfers) is encrypted.\n\n**Public-key authentication**:\n- The **private key** (`~/.ssh/id_ed25519`) never leaves your machine and should have a passphrase. Permissions must be `600`.\n- The **public key** (`id_ed25519.pub`) can be shared freely; you add it to the server's `~/.ssh/authorized_keys`.\n- At login the server sends a challenge; your client signs it with the private key; the server verifies the signature with the public key. The private key is never transmitted.\n\nWhy keys beat passwords: they can't be brute-forced realistically, can't be phished by typing them into a fake prompt, and can be revoked individually per device.",
+   "analogy": "The public key is a padlock you hand out freely; the private key is the only key that opens it. You give the server your padlock; to prove it's you, you show you can open it — without ever handing over the key.",
+   "example": {
+    "lang": "bash",
+    "code": "$ ssh deploy@203.0.113.10\nThe authenticity of host '203.0.113.10' can't be established.\nED25519 key fingerprint is SHA256:Xb9q...Lk2.\nAre you sure you want to continue connecting (yes/no)? yes\nWarning: Permanently added '203.0.113.10' to the list of known hosts.\ndeploy@web-1:~$ uptime\n 10:02:11 up 31 days,  2:14,  1 user,  load average: 0.12, 0.08, 0.05\ndeploy@web-1:~$ exit",
+    "explain": "First connection: verify the fingerprint (ideally against what your cloud console shows), then it's pinned in known_hosts."
+   },
+   "terms": [
+    [
+     "sshd",
+     "The SSH server daemon."
+    ],
+    [
+     "Host key",
+     "Server's key proving its identity; pinned in known_hosts."
+    ],
+    [
+     "Private key",
+     "Secret key kept on your machine (600 permissions)."
+    ],
+    [
+     "Public key",
+     "Shareable key placed in authorized_keys."
+    ],
+    [
+     "Port 22",
+     "Default SSH port."
+    ]
+   ],
+   "remember": [
+    "Private key stays private; public key goes on servers.",
+    "Authentication signs a challenge; the key isn't sent.",
+    "Host-key warnings deserve investigation."
+   ],
+   "mistakes": [
+    "Emailing or committing a private key.",
+    "Blindly typing 'yes' to a changed host key warning.",
+    "Private key with 644 permissions (SSH refuses it)."
+   ],
+   "interview": [
+    "How does public-key authentication work in SSH?",
+    "What is known_hosts for?"
+   ],
+   "practice": [
+    "Can you explain: why the private key never crosses the network?",
+    "Can you debug: 'REMOTE HOST IDENTIFICATION HAS CHANGED'."
+   ],
+   "id": "ssh-fundamentals"
+  },
+  {
+   "title": "ssh-keygen, authorized_keys and connecting",
+   "minutes": 13,
+   "summary": "Generate keys, install them on a server, and connect conveniently with ~/.ssh/config.",
+   "simple": "You create a key pair with `ssh-keygen`, copy the public key to the server's `authorized_keys`, then connect with `ssh user@host`. An SSH config file saves typing.",
+   "technical": "- Generate: `ssh-keygen -t ed25519 -C \"alice@laptop\"` → `~/.ssh/id_ed25519` and `.pub`. Ed25519 is modern and short; use RSA 4096 only for legacy systems. Set a passphrase; use `ssh-agent` so you type it once per session (`ssh-add`).\n- Install: `ssh-copy-id deploy@host`, or append the `.pub` line to `~/.ssh/authorized_keys` on the server. Server-side permissions: `~/.ssh` = 700, `authorized_keys` = 600, owned by the user — otherwise sshd silently ignores the file.\n- Connect: `ssh -i ~/.ssh/id_ed25519 -p 2222 deploy@203.0.113.10`.\n- Run one command: `ssh deploy@host 'sudo systemctl restart app'`.\n- Debug: `ssh -v` shows which keys are offered and why auth fails.\n\n`~/.ssh/config`:\n```text\nHost prod\n    HostName 203.0.113.10\n    User deploy\n    Port 2222\n    IdentityFile ~/.ssh/id_ed25519\n```\nNow `ssh prod` works. GitHub uses the same mechanism: add your public key in GitHub settings, then `ssh -T git@github.com`.\n\n**Port forwarding**: `ssh -L 5433:localhost:5432 prod` makes the server's private Postgres reachable at your `localhost:5433`, through the encrypted tunnel, without exposing it publicly.",
+   "analogy": "`authorized_keys` is the guest list at the server's door. `~/.ssh/config` is your contacts app: you save \"prod\" once instead of dialing the full number, extension and name every time.",
+   "example": {
+    "lang": "bash",
+    "code": "$ ssh-keygen -t ed25519 -C \"alice@laptop\"\nEnter passphrase (empty for no passphrase): ********\nYour public key has been saved in /home/alice/.ssh/id_ed25519.pub\n$ ssh-copy-id -i ~/.ssh/id_ed25519.pub deploy@203.0.113.10\n$ ssh deploy@203.0.113.10 'ls -ld ~/.ssh ~/.ssh/authorized_keys'\ndrwx------ 2 deploy deploy 4096 ... /home/deploy/.ssh\n-rw------- 1 deploy deploy   98 ... /home/deploy/.ssh/authorized_keys\n$ ssh -T git@github.com\nHi alice! You've successfully authenticated, but GitHub does not provide shell access.",
+    "explain": "Generate, install, verify server-side permissions, and test the same key with GitHub."
+   },
+   "terms": [
+    [
+     "ssh-keygen",
+     "Creates key pairs."
+    ],
+    [
+     "ssh-copy-id",
+     "Installs your public key on a server."
+    ],
+    [
+     "ssh-agent",
+     "Holds decrypted keys in memory for the session."
+    ],
+    [
+     "~/.ssh/config",
+     "Per-host connection settings and aliases."
+    ],
+    [
+     "Local port forwarding (-L)",
+     "Tunnel a remote port to a local one."
+    ]
+   ],
+   "remember": [
+    "Ed25519 + passphrase + ssh-agent.",
+    "Server: ~/.ssh 700, authorized_keys 600.",
+    "`ssh -v` explains auth failures."
+   ],
+   "mistakes": [
+    "Wrong permissions on the server's ~/.ssh, so keys are ignored.",
+    "Pasting the private key into authorized_keys.",
+    "Exposing databases publicly instead of using an SSH tunnel."
+   ],
+   "interview": [
+    "Walk through setting up key login for a new server.",
+    "What does `ssh -L` do?"
+   ],
+   "practice": [
+    "Can you use: an SSH config alias plus a tunnel to a remote Postgres?",
+    "Can you debug: 'Permission denied (publickey)' with `ssh -v`."
+   ],
+   "id": "ssh-keys-connect"
+  },
+  {
+   "title": "SCP/SFTP and SSH security basics",
+   "minutes": 12,
+   "summary": "Copy files over SSH and harden an SSH server.",
+   "simple": "**scp**, **sftp** and **rsync** move files over the same encrypted SSH connection. Because SSH is the front door of your servers, it needs basic hardening.",
+   "technical": "File transfer:\n- `scp file.txt prod:/tmp/` and `scp prod:/var/log/app.log .` — quick copies; `-r` for directories.\n- `sftp prod` — interactive session (`ls`, `get`, `put`).\n- `rsync -avz --delete ./build/ prod:/var/www/app/` — syncs only differences; best for deployments and backups.\n\nHardening `/etc/ssh/sshd_config` (then `sudo systemctl reload ssh`, keeping your current session open in case you lock yourself out):\n- `PasswordAuthentication no` — keys only.\n- `PermitRootLogin no` — log in as a user, escalate with sudo.\n- `PubkeyAuthentication yes`; optionally `AllowUsers deploy`.\n- Firewall: allow 22 only from known IPs if possible (cloud security groups, `ufw allow from 198.51.100.0/24 to any port 22`).\n- `fail2ban` bans IPs after repeated failures. Changing the port reduces log noise but is not real security.\n- Keep OpenSSH updated. Use one key per device so a lost laptop means removing one line from authorized_keys.\n- Prefer a bastion/jump host (`ssh -J bastion prod`) or a managed access tool for production fleets.",
+   "analogy": "Hardening SSH is securing your front door: no hidden spare key under the mat (passwords), no master key for the whole building in circulation (root login), a camera that bans repeat lock-pickers (fail2ban), and a gate that only opens for known visitors (firewall).",
+   "example": {
+    "lang": "bash",
+    "code": "$ rsync -avz --delete ./dist/ prod:/var/www/app/\nsending incremental file list\nindex.html\njs/app.js\nsent 14,302 bytes  received 92 bytes\n\n# /etc/ssh/sshd_config (excerpt)\nPasswordAuthentication no\nPermitRootLogin no\nAllowUsers deploy\n\n$ sudo sshd -t && sudo systemctl reload ssh     # validate config before reloading",
+    "explain": "rsync only sent changed files. `sshd -t` validates the config so a typo doesn't lock you out after reload."
+   },
+   "terms": [
+    [
+     "scp",
+     "Simple file copy over SSH."
+    ],
+    [
+     "sftp",
+     "Interactive file transfer over SSH."
+    ],
+    [
+     "rsync",
+     "Efficient differential sync over SSH."
+    ],
+    [
+     "sshd_config",
+     "Server configuration file."
+    ],
+    [
+     "Bastion / jump host",
+     "Single hardened entry point to private servers."
+    ]
+   ],
+   "remember": [
+    "rsync for repeat transfers and deploys.",
+    "Disable password and root login.",
+    "Test config with `sshd -t` and keep a session open while changing it."
+   ],
+   "mistakes": [
+    "Disabling passwords before confirming key login works.",
+    "Relying on a non-standard port as 'security'.",
+    "Sharing one private key across the whole team."
+   ],
+   "interview": [
+    "How would you harden SSH on a fresh server?",
+    "scp vs rsync: when do you prefer rsync?"
+   ],
+   "practice": [
+    "Can you use: deploy a static site with rsync?",
+    "Can you build: a hardened sshd_config plus firewall rule set?"
+   ],
+   "id": "ssh-transfer-security"
+  }
+ ]
+}

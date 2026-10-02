@@ -1,0 +1,398 @@
+[
+ {
+  "id": "logic-01",
+  "title": "Mutable default trap",
+  "category": "Output prediction",
+  "difficulty": "medium",
+  "question": "What does this print?",
+  "options": [
+   "`[1] [2]`",
+   "`[1] [1, 2]`",
+   "`[1, 2] [1, 2]`",
+   "`[] []`"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Both calls share one default list, and `print` runs after both calls have appended, so both names show `[1, 2]`.",
+  "module": "python",
+  "code": "def add(x, bag=[]):\n    bag.append(x)\n    return bag\na = add(1)\nb = add(2)\nprint(a, b)",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-02",
+  "title": "Closures in a loop",
+  "category": "Output prediction",
+  "difficulty": "hard",
+  "question": "What does this print?",
+  "options": [
+   "`2 2 2`",
+   "`0 1 2`",
+   "`0 0 0`",
+   "Error"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Closures capture the variable `i`, not its value. After the loop, `i` is 2 for all three lambdas. Fix with `lambda i=i: i`.",
+  "module": "python",
+  "code": "fs = [lambda: i for i in range(3)]\nprint(*[f() for f in fs])",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-03",
+  "title": "Slicing",
+  "category": "Output prediction",
+  "difficulty": "easy",
+  "question": "What does this print?",
+  "options": [
+   "`[1, 2, 3]`",
+   "`[2, 3, 4]`",
+   "`[4, 3, 2]`",
+   "`[5, 4, 3]`"
+  ],
+  "correctAnswer": 2,
+  "explanation": "`s[3:0:-1]` starts at index 3 (value 4) and walks backwards, stopping before index 0.",
+  "module": "python",
+  "code": "s = [1, 2, 3, 4, 5]\nprint(s[3:0:-1])",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-04",
+  "title": "Dict iteration",
+  "category": "Code tracing",
+  "difficulty": "medium",
+  "question": "What is printed?",
+  "options": [
+   "`abc`",
+   "`('a', 1)`",
+   "`6`",
+   "`3`"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Iterating `d.values()` yields 1, 2, 3; the sum is 6.",
+  "module": "python",
+  "code": "d = {\"a\": 1, \"b\": 2, \"c\": 3}\ntotal = 0\nfor v in d.values():\n    total += v\nprint(total)",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-05",
+  "title": "Trace the while loop",
+  "category": "Code tracing",
+  "difficulty": "medium",
+  "question": "What is printed?",
+  "options": [
+   "`16`",
+   "`5`",
+   "`6`",
+   "`4`"
+  ],
+  "correctAnswer": 1,
+  "explanation": "n goes 37 → 18 → 9 → 4 → 2 → 1 (integer halving), so the loop body runs 5 times.",
+  "module": "python",
+  "code": "n, steps = 37, 0\nwhile n > 1:\n    n //= 2\n    steps += 1\nprint(steps)",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-06",
+  "title": "Generator laziness",
+  "category": "Code tracing",
+  "difficulty": "hard",
+  "question": "What is printed?",
+  "options": [
+   "`start`",
+   "`0 1`",
+   "Nothing",
+   "`start 0 1`"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Calling `gen()` does nothing until iteration starts; the first `next` runs up to the first yield, printing 'start' then 0.",
+  "module": "python",
+  "code": "def gen():\n    print(\"start\", end=\" \")\n    yield 0\n    yield 1\ng = gen()\nprint(next(g), end=\" \")\nprint(next(g))",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-07",
+  "title": "Off-by-one",
+  "category": "Debugging",
+  "difficulty": "easy",
+  "question": "This function should return the last element, but raises IndexError. What's the fix?",
+  "options": [
+   "Convert to a tuple",
+   "`return items[len(items)]` is correct",
+   "Use `items[len(items) - 1]` or `items[-1]`",
+   "Use `items[0]`"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Indexes go 0..len-1. `items[-1]` is the idiomatic last element (still check for an empty list).",
+  "code": "def last(items):\n    return items[len(items)]",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-08",
+  "title": "Silent swallow",
+  "category": "Debugging",
+  "difficulty": "medium",
+  "question": "Users report missing orders, yet no errors appear in logs. What's the real bug?",
+  "options": [
+   "`order` should be global",
+   "`save()` is slow",
+   "The bare `except: pass` hides every failure, including bugs and database errors",
+   "The function needs a return value"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Catch specific exceptions, log them, and re-raise or return an explicit failure.",
+  "code": "def save_order(order):\n    try:\n        order.validate()\n        db.insert(order)\n    except:\n        pass",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-09",
+  "title": "Integer comparison by identity",
+  "category": "Debugging",
+  "difficulty": "hard",
+  "question": "This check works in tests with small numbers but fails in production with large IDs. Why?",
+  "options": [
+   "IDs are strings",
+   "Integers overflow",
+   "The dict is unordered",
+   "`is` compares object identity; CPython caches only small ints (-5..256), so equal large ints may be different objects. Use `==`"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Never use `is` for value equality except with singletons like None.",
+  "code": "def same_user(a_id, b_id):\n    return a_id is b_id",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-10",
+  "title": "Complexity of nested loops",
+  "category": "Time complexity",
+  "difficulty": "easy",
+  "question": "What's the time complexity?",
+  "options": [
+   "O(n)",
+   "O(2ⁿ)",
+   "O(n log n)",
+   "O(n²)"
+  ],
+  "correctAnswer": 3,
+  "explanation": "For each of n items, the inner loop runs n times: n × n operations.",
+  "code": "def has_duplicate(xs):\n    for i in range(len(xs)):\n        for j in range(len(xs)):\n            if i != j and xs[i] == xs[j]:\n                return True\n    return False",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-11",
+  "title": "Make it linear",
+  "category": "Time complexity",
+  "difficulty": "medium",
+  "question": "How can `has_duplicate` be made O(n) on average?",
+  "options": [
+   "Sort it first: O(n)",
+   "Track seen values in a set and return True on the first repeat",
+   "Use two pointers without sorting",
+   "It can't be improved"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Set membership and insertion are average O(1), so one pass is O(n). Sorting first would be O(n log n)."
+ },
+ {
+  "id": "logic-12",
+  "title": "Binary search cost",
+  "category": "Time complexity",
+  "difficulty": "medium",
+  "question": "How many comparisons does binary search need, at most, to find an item in a sorted array of 1,000,000 elements?",
+  "options": [
+   "About 500,000",
+   "About 20",
+   "About 1,000",
+   "1,000,000"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Each step halves the range: log₂(1,000,000) ≈ 20."
+ },
+ {
+  "id": "logic-13",
+  "title": "Choose the structure: LRU",
+  "category": "Data structures",
+  "difficulty": "hard",
+  "question": "An LRU cache needs O(1) get, O(1) put and O(1) eviction of the least recently used key. Which combination works?",
+  "options": [
+   "A single list",
+   "A binary heap",
+   "A hash map plus a doubly linked list (Python: `OrderedDict`)",
+   "A sorted array"
+  ],
+  "correctAnswer": 2,
+  "explanation": "The hash map finds nodes in O(1); the linked list moves a node to the front and removes the tail in O(1). `functools.lru_cache` and `OrderedDict.move_to_end` use this idea."
+ },
+ {
+  "id": "logic-14",
+  "title": "Queue vs stack",
+  "category": "Data structures",
+  "difficulty": "easy",
+  "question": "Background jobs must be processed in the order they arrive. Which structure fits?",
+  "options": [
+   "Queue (FIFO)",
+   "Binary tree",
+   "Set",
+   "Stack (LIFO)"
+  ],
+  "correctAnswer": 0,
+  "explanation": "First in, first out. In Python, `collections.deque` gives O(1) appends and pops at both ends; `list.pop(0)` is O(n)."
+ },
+ {
+  "id": "logic-15",
+  "title": "Next in sequence",
+  "category": "Pattern recognition",
+  "difficulty": "easy",
+  "question": "What comes next: 2, 6, 12, 20, 30, ?",
+  "options": [
+   "36",
+   "40",
+   "42",
+   "48"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Differences are 4, 6, 8, 10, so the next difference is 12: 30 + 12 = 42. (Each term is n × (n+1).)"
+ },
+ {
+  "id": "logic-16",
+  "title": "Bit patterns",
+  "category": "Pattern recognition",
+  "difficulty": "medium",
+  "question": "Powers of two in binary are 1, 10, 100, 1000… Which expression is True exactly when a positive integer n is a power of two?",
+  "options": [
+   "`n // 2 == 1`",
+   "`n & (n - 1) == 0`",
+   "`n | 1 == n`",
+   "`n % 2 == 0`"
+  ],
+  "correctAnswer": 1,
+  "explanation": "A power of two has a single 1-bit; subtracting 1 flips it and sets all lower bits, so AND gives 0. Note: in Python write `(n & (n - 1)) == 0` because `==` binds tighter than `&`."
+ },
+ {
+  "id": "logic-17",
+  "title": "Who is lying?",
+  "category": "Logical reasoning",
+  "difficulty": "medium",
+  "question": "Three servers report status. A says 'B is down.' B says 'C is down.' C says 'A and B are both down.' Exactly one server is actually up, and up servers tell the truth while down servers report false statements. Which server is up?",
+  "options": [
+   "B",
+   "C",
+   "None",
+   "A"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Test each case. **A up:** 'B is down' is true, so B is down; B's false claim 'C is down' means C is up — two servers up, contradiction. **C up:** 'A and B are down' is true; then A's claim 'B is down' would be true from a down server — contradiction. **B up:** 'C is down' is true; A's claim 'B is down' is false (fine, A is down); C's claim 'A and B are down' is false (fine). Only B is consistent."
+ },
+ {
+  "id": "logic-18",
+  "title": "Necessary vs sufficient",
+  "category": "Logical reasoning",
+  "difficulty": "medium",
+  "question": "Rule: 'If a request has a valid token, it is authenticated.' A request is authenticated. What can you conclude?",
+  "options": [
+   "It has no token",
+   "It has a valid token",
+   "The token is expired",
+   "Nothing certain about the token; authentication might come from another method (e.g. session)"
+  ],
+  "correctAnswer": 3,
+  "explanation": "This is affirming the consequent. A valid token is sufficient, not necessary, for authentication."
+ },
+ {
+  "id": "logic-19",
+  "title": "Retry with backoff",
+  "category": "Algorithmic thinking",
+  "difficulty": "medium",
+  "question": "A client retries a failed request with exponential backoff starting at 1 s, doubling each time, max 5 retries. What is the total waiting time if all retries fail?",
+  "options": [
+   "32 s",
+   "5 s",
+   "15 s",
+   "31 s"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Waits are 1 + 2 + 4 + 8 + 16 = 31 seconds. Real clients add random jitter so many clients don't retry in sync."
+ },
+ {
+  "id": "logic-20",
+  "title": "Two-sum strategy",
+  "category": "Algorithmic thinking",
+  "difficulty": "medium",
+  "question": "Given an unsorted list and a target, find two numbers adding to the target in one pass. What's the key idea?",
+  "options": [
+   "Sort and binary-search each element",
+   "Use recursion",
+   "Try all pairs",
+   "For each x, check whether target − x is already in a hash set/map of seen values; then add x"
+  ],
+  "correctAnswer": 3,
+  "explanation": "One pass with a hash map is O(n) time, O(n) space."
+ },
+ {
+  "id": "logic-21",
+  "title": "Short-circuit",
+  "category": "Programming logic",
+  "difficulty": "easy",
+  "question": "What is printed?",
+  "options": [
+   "`check False`",
+   "`False`",
+   "Nothing",
+   "`check`"
+  ],
+  "correctAnswer": 1,
+  "explanation": "`and` stops at the first falsy operand, so `check()` is never called.",
+  "module": "python",
+  "code": "def check():\n    print(\"check\", end=\" \")\n    return True\nprint(False and check())",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-22",
+  "title": "Truthiness",
+  "category": "Programming logic",
+  "difficulty": "medium",
+  "question": "What is printed?",
+  "options": [
+   "`has items`",
+   "`None`",
+   "`empty`",
+   "Error"
+  ],
+  "correctAnswer": 0,
+  "explanation": "A non-empty string is truthy, even `\"0\"` or `\"False\"`. This is why env-var booleans must be parsed explicitly.",
+  "module": "python",
+  "code": "flag = \"False\"\nprint(\"has items\" if flag else \"empty\")",
+  "codeLang": "python"
+ },
+ {
+  "id": "logic-23",
+  "title": "SQL row count",
+  "category": "Code tracing",
+  "difficulty": "hard",
+  "question": "customers has 3 rows (ids 1,2,3). orders has rows for customer 1 (two orders) and customer 2 (one order). How many rows does this return?",
+  "options": [
+   "2",
+   "4",
+   "3",
+   "5"
+  ],
+  "correctAnswer": 1,
+  "explanation": "LEFT JOIN keeps all customers: customer 1 appears twice (two orders), customer 2 once, customer 3 once with NULLs. Total 4.",
+  "module": "postgres",
+  "code": "SELECT c.id, o.id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id;",
+  "codeLang": "sql"
+ },
+ {
+  "id": "logic-24",
+  "title": "HTTP retries",
+  "category": "Logical reasoning",
+  "difficulty": "medium",
+  "question": "A client times out on `POST /payments` and retries. The server had actually processed the first request. Which design prevents a double charge?",
+  "options": [
+   "Require an Idempotency-Key header and replay the stored result for repeated keys",
+   "Lower the timeout",
+   "Use GET instead",
+   "Return 500 on the second call"
+  ],
+  "correctAnswer": 0,
+  "explanation": "The client can't know whether the first attempt succeeded, so the server must make retries safe.",
+  "module": "rest"
+ }
+]

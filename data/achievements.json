@@ -1,0 +1,252 @@
+[
+ {
+  "id": "first-lesson",
+  "title": "First commit",
+  "description": "Complete your first lesson.",
+  "icon": "🌱",
+  "condition": {
+   "type": "lessons",
+   "count": 1
+  }
+ },
+ {
+  "id": "linux-explorer",
+  "title": "Linux Explorer",
+  "description": "Complete every Linux Basics lesson.",
+  "icon": "🐧",
+  "condition": {
+   "type": "module",
+   "module": "linux"
+  }
+ },
+ {
+  "id": "git-starter",
+  "title": "Git Starter",
+  "description": "Complete every Git & GitHub lesson.",
+  "icon": "🌿",
+  "condition": {
+   "type": "module",
+   "module": "git"
+  }
+ },
+ {
+  "id": "python-builder",
+  "title": "Python Builder",
+  "description": "Complete every Python lesson.",
+  "icon": "🐍",
+  "condition": {
+   "type": "module",
+   "module": "python"
+  }
+ },
+ {
+  "id": "api-engineer",
+  "title": "API Engineer",
+  "description": "Complete Django/DRF and REST API.",
+  "icon": "🔌",
+  "condition": {
+   "type": "module",
+   "module": "rest"
+  }
+ },
+ {
+  "id": "django-dev",
+  "title": "Django Developer",
+  "description": "Complete every Django / DRF lesson.",
+  "icon": "🎸",
+  "condition": {
+   "type": "module",
+   "module": "django"
+  }
+ },
+ {
+  "id": "database-explorer",
+  "title": "Database Explorer",
+  "description": "Complete every PostgreSQL lesson.",
+  "icon": "🐘",
+  "condition": {
+   "type": "module",
+   "module": "postgres"
+  }
+ },
+ {
+  "id": "docker-beginner",
+  "title": "Docker Beginner",
+  "description": "Complete every Docker lesson.",
+  "icon": "🐳",
+  "condition": {
+   "type": "module",
+   "module": "docker"
+  }
+ },
+ {
+  "id": "protocol-reader",
+  "title": "Protocol Reader",
+  "description": "Complete HTTP / HTTPS.",
+  "icon": "📡",
+  "condition": {
+   "type": "module",
+   "module": "http"
+  }
+ },
+ {
+  "id": "name-resolver",
+  "title": "Name Resolver",
+  "description": "Complete DNS Basics.",
+  "icon": "🧭",
+  "condition": {
+   "type": "module",
+   "module": "dns"
+  }
+ },
+ {
+  "id": "keyholder",
+  "title": "Keyholder",
+  "description": "Complete SSH.",
+  "icon": "🔑",
+  "condition": {
+   "type": "module",
+   "module": "ssh"
+  }
+ },
+ {
+  "id": "config-keeper",
+  "title": "Config Keeper",
+  "description": "Complete Environment Variables.",
+  "icon": "🧾",
+  "condition": {
+   "type": "module",
+   "module": "env"
+  }
+ },
+ {
+  "id": "networking-fundamentals",
+  "title": "Networking Fundamentals",
+  "description": "Complete Basic Networking.",
+  "icon": "🌐",
+  "condition": {
+   "type": "module",
+   "module": "networking"
+  }
+ },
+ {
+  "id": "track-a",
+  "title": "Track A Complete",
+  "description": "Complete every lesson in Track A.",
+  "icon": "🏁",
+  "condition": {
+   "type": "track"
+  }
+ },
+ {
+  "id": "mcq-100",
+  "title": "Hundred Answers",
+  "description": "Answer 100 MCQs.",
+  "icon": "💯",
+  "condition": {
+   "type": "mcq",
+   "count": 100
+  }
+ },
+ {
+  "id": "mcq-500",
+  "title": "Question Machine",
+  "description": "Answer 500 MCQs.",
+  "icon": "⚙️",
+  "condition": {
+   "type": "mcq",
+   "count": 500
+  }
+ },
+ {
+  "id": "sharp",
+  "title": "Sharp Shooter",
+  "description": "Keep 85% accuracy over at least 100 answers.",
+  "icon": "🎯",
+  "condition": {
+   "type": "accuracy",
+   "value": 85,
+   "min": 100
+  }
+ },
+ {
+  "id": "logic-10",
+  "title": "Logician",
+  "description": "Solve 10 Logic Lab problems.",
+  "icon": "🧩",
+  "condition": {
+   "type": "logic",
+   "count": 10
+  }
+ },
+ {
+  "id": "coder-5",
+  "title": "Hands on Keyboard",
+  "description": "Solve 5 Coding Lab challenges.",
+  "icon": "⌨️",
+  "condition": {
+   "type": "coding",
+   "count": 5
+  }
+ },
+ {
+  "id": "first-exam",
+  "title": "Exam Ready",
+  "description": "Pass any module exam.",
+  "icon": "📝",
+  "condition": {
+   "type": "examPass",
+   "scope": "module"
+  }
+ },
+ {
+  "id": "track-exam",
+  "title": "Certified Track A",
+  "description": "Pass the full Track A exam.",
+  "icon": "🎓",
+  "condition": {
+   "type": "examPass",
+   "scope": "track"
+  }
+ },
+ {
+  "id": "streak-7",
+  "title": "Week Streak",
+  "description": "Study 7 days in a row.",
+  "icon": "🔥",
+  "condition": {
+   "type": "streak",
+   "value": 7
+  }
+ },
+ {
+  "id": "streak-30",
+  "title": "Month Streak",
+  "description": "Study 30 days in a row.",
+  "icon": "☄️",
+  "condition": {
+   "type": "streak",
+   "value": 30
+  }
+ },
+ {
+  "id": "xp-1000",
+  "title": "1,000 XP",
+  "description": "Earn 1,000 XP.",
+  "icon": "⭐",
+  "condition": {
+   "type": "xp",
+   "value": 1000
+  }
+ },
+ {
+  "id": "xp-5000",
+  "title": "5,000 XP",
+  "description": "Earn 5,000 XP.",
+  "icon": "🌟",
+  "condition": {
+   "type": "xp",
+   "value": 5000
+  }
+ }
+]

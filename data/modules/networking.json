@@ -1,0 +1,308 @@
+{
+ "id": "networking",
+ "trackId": "backend",
+ "title": "Basic Networking",
+ "tagline": "IP, subnets, ports, TCP and UDP: what's under every request.",
+ "overview": "When a service can't reach its database, when a container port isn't reachable, when a cloud security group blocks traffic — the fix is networking knowledge. This module covers addressing (IPv4/IPv6, private/public, localhost), subnets and CIDR with gateways, ports and sockets, and the differences between TCP and UDP, ending with a practical troubleshooting routine.",
+ "objectives": [
+  "Read IPv4/IPv6 addresses and identify private, public and loopback ranges.",
+  "Calculate CIDR ranges and explain gateways and routing.",
+  "Explain ports, sockets and common service ports.",
+  "Compare TCP and UDP on connection, reliability, ordering and flow control.",
+  "Troubleshoot connectivity bottom-up and tell timeouts from refusals."
+ ],
+ "concepts": [
+  [
+   "IP address",
+   "Network interface identifier."
+  ],
+  [
+   "CIDR",
+   "Prefix notation for address ranges."
+  ],
+  [
+   "Gateway",
+   "Router for off-subnet traffic."
+  ],
+  [
+   "Port",
+   "Service endpoint on a host."
+  ],
+  [
+   "TCP",
+   "Reliable ordered byte stream."
+  ],
+  [
+   "UDP",
+   "Best-effort datagrams."
+  ]
+ ],
+ "notes": [
+  "`ip addr`, `ip route`, `ss -ltnp`, `nc -zv`, `dig` are your toolkit.",
+  "Timeout ≠ refused: they point to different layers.",
+  "Use Python's ipaddress module for CIDR math."
+ ],
+ "checkpoints": {
+  "explain": [
+   "TCP vs UDP trade-offs",
+   "127.0.0.1 vs 0.0.0.0",
+   "CIDR and gateways"
+  ],
+  "use": [
+   "ss, nc, ip route",
+   "Plan a VPC with subnets",
+   "Pick the right port exposure"
+  ],
+  "debug": [
+   "App can't reach DB",
+   "Port already in use",
+   "Container port unreachable"
+  ],
+  "build": [
+   "A network diagram + security group rules for web, app and DB tiers"
+  ]
+ },
+ "tasks": [
+  {
+   "title": "Network map",
+   "goal": "Document your own machine's networking.",
+   "steps": [
+    "List interfaces and IPs with `ip addr`; mark private/public/loopback.",
+    "Read `ip route` and identify your gateway.",
+    "List listening ports with `ss -ltnp` and identify each service."
+   ]
+  },
+  {
+   "title": "TCP vs UDP lab",
+   "goal": "Feel the difference with netcat.",
+   "steps": [
+    "TCP: `nc -l 9000` in one terminal, `nc localhost 9000` in another; type messages.",
+    "Stop the listener and try again: observe 'connection refused'.",
+    "UDP: `nc -u -l 9001` and `nc -u localhost 9001`; stop the listener and notice the sender gets no error."
+   ]
+  }
+ ],
+ "lessons": [
+  {
+   "title": "IP addresses: IPv4, IPv6, public, private and localhost",
+   "minutes": 14,
+   "summary": "How machines are addressed, which ranges are private, and what 127.0.0.1 and 0.0.0.0 mean.",
+   "simple": "An **IP address** identifies a network interface so packets can be delivered to it. **IPv4** addresses look like `192.168.1.20`; **IPv6** addresses look like `2001:db8::1`. Some ranges are **private** (inside homes, offices, clouds), others **public** (reachable on the internet).",
+   "technical": "**IPv4**: 32 bits, written as four octets 0–255 (`203.0.113.10`). About 4.3 billion addresses — not enough, which led to NAT and IPv6.\n\n**IPv6** (overview): 128 bits, written in hex groups (`2001:0db8:0000:0000:0000:0000:0000:0001` = `2001:db8::1`; `::` compresses one run of zeros). Effectively unlimited addresses, no NAT needed, `::1` is loopback.\n\n**Private ranges** (RFC 1918), not routed on the public internet:\n- `10.0.0.0/8`\n- `172.16.0.0/12` (172.16.x – 172.31.x; Docker often uses 172.17.x)\n- `192.168.0.0/16`\nDevices with private IPs reach the internet through **NAT** on a router/gateway, which rewrites the source to its public IP.\n\nSpecial addresses:\n- `127.0.0.1` / `localhost` (whole `127.0.0.0/8`): **loopback**, traffic never leaves the machine.\n- `0.0.0.0`: as a **listen** address it means \"all interfaces on this machine\". `runserver 0.0.0.0:8000` is reachable from other devices; `127.0.0.1:8000` only from the same machine (or the same container).\n- `169.254.x.x`: link-local, usually means DHCP failed.\n\n`ip addr` (Linux) / `ipconfig` (Windows) shows your addresses; `curl ifconfig.me` shows your public IP as seen from outside.",
+   "analogy": "A private IP is an apartment number; the public IP is the building's street address. The building's front desk (NAT router) receives all mail and forwards it to the right apartment. Loopback is a note you leave for yourself on your own fridge.",
+   "example": {
+    "lang": "bash",
+    "code": "$ ip -4 addr show | grep inet\n    inet 127.0.0.1/8 scope host lo\n    inet 192.168.1.20/24 brd 192.168.1.255 scope global wlan0\n    inet 172.17.0.1/16 scope global docker0\n$ curl -s ifconfig.me\n103.92.84.17                    # public IP (the router's, via NAT)\n$ python -m http.server 8000 --bind 127.0.0.1   # only this machine\n$ python -m http.server 8000 --bind 0.0.0.0     # all interfaces: phone on Wi-Fi can reach it",
+    "explain": "The laptop has a loopback, a private Wi-Fi address and a Docker bridge address, but the internet sees only the router's public IP."
+   },
+   "terms": [
+    [
+     "IPv4 / IPv6",
+     "32-bit vs 128-bit addresses."
+    ],
+    [
+     "Private IP",
+     "RFC 1918 address not routed publicly."
+    ],
+    [
+     "NAT",
+     "Router rewrites private source addresses to its public one."
+    ],
+    [
+     "Loopback",
+     "127.0.0.1 / ::1, traffic stays on the host."
+    ],
+    [
+     "0.0.0.0 (listen)",
+     "Bind on all interfaces."
+    ]
+   ],
+   "remember": [
+    "10/8, 172.16/12, 192.168/16 are private.",
+    "127.0.0.1 = this machine only; 0.0.0.0 = all interfaces.",
+    "Inside a container, localhost is the container."
+   ],
+   "mistakes": [
+    "Binding a server to 127.0.0.1 and wondering why other machines can't reach it.",
+    "Binding a database to 0.0.0.0 on a public server without a firewall.",
+    "Assuming the IP you see in `ip addr` is your public IP."
+   ],
+   "interview": [
+    "What's the difference between 127.0.0.1 and 0.0.0.0?",
+    "Why do private IP ranges exist?"
+   ],
+   "practice": [
+    "Can you use: find your private and public IP?",
+    "Can you debug: your phone can't reach the dev server running on your laptop."
+   ],
+   "id": "networking-ip"
+  },
+  {
+   "title": "Subnets, subnet masks, CIDR and gateways",
+   "minutes": 15,
+   "summary": "Split networks into ranges, read CIDR notation, and understand the default gateway.",
+   "simple": "A **subnet** is a range of IP addresses that can talk to each other directly. The **subnet mask** or **CIDR prefix** says which part of an address is the network and which part is the host. Traffic for other networks goes to the **gateway** (router).",
+   "technical": "CIDR `/n` = the first n bits are the network part.\n- `192.168.1.0/24`: mask `255.255.255.0`, 32-24 = 8 host bits → 2⁸ = 256 addresses (`.0`–`.255`), **254 usable** (the first is the network address, the last `.255` is broadcast).\n- `/16` → 65,536 addresses (`10.0.x.x`), mask `255.255.0.0`.\n- `/28` → 16 addresses, 14 usable. `/32` → exactly one address (common in firewall rules).\n- Number of addresses = 2^(32 − prefix). Smaller prefix = bigger network.\n\nIs `192.168.1.77` in `192.168.1.64/26`? /26 = 64-address blocks: .0–.63, .64–.127, … → yes.\n\nRouting decision on a host: if the destination is in my subnet, send directly (ARP finds the MAC address); otherwise send to the **default gateway** (e.g. `192.168.1.1`), which forwards it on. `ip route` shows the routing table: `default via 192.168.1.1 dev wlan0`.\n\nWhere you'll see this as a backend engineer: cloud **VPCs** (`10.0.0.0/16`) split into public and private subnets (`10.0.1.0/24`, `10.0.2.0/24`), security group rules (`allow 5432 from 10.0.2.0/24`), Docker networks (`172.18.0.0/16`), and conflicts when a VPN uses the same range as your Docker network.\n\n**DNS relationship**: DNS turns a name into an IP; routing (subnets + gateways) gets packets to that IP. DNS servers are usually configured alongside the gateway by DHCP.",
+   "analogy": "A subnet is a neighborhood. Houses in the same neighborhood deliver notes to each other by hand. Anything addressed outside the neighborhood goes to the post office at the edge (the gateway), which knows how to forward it.",
+   "example": {
+    "lang": "bash",
+    "code": "$ ip route\ndefault via 192.168.1.1 dev wlan0\n192.168.1.0/24 dev wlan0 proto kernel scope link src 192.168.1.20\n172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1\n\n$ python3 -c \"import ipaddress as i; n=i.ip_network('10.0.4.0/22'); print(n.num_addresses, n[0], n[-1])\"\n1024 10.0.4.0 10.0.7.255\n$ python3 -c \"import ipaddress as i; print(i.ip_address('10.0.6.9') in i.ip_network('10.0.4.0/22'))\"\nTrue",
+    "explain": "Local subnets are reached directly; everything else uses the default route via 192.168.1.1. Python's ipaddress module does CIDR math for you."
+   },
+   "terms": [
+    [
+     "Subnet",
+     "Range of addresses on one network segment."
+    ],
+    [
+     "CIDR /n",
+     "Prefix length: number of network bits."
+    ],
+    [
+     "Subnet mask",
+     "Dotted form of the prefix, e.g. 255.255.255.0 = /24."
+    ],
+    [
+     "Default gateway",
+     "Router used for destinations outside the subnet."
+    ],
+    [
+     "VPC",
+     "Private cloud network divided into subnets."
+    ]
+   ],
+   "remember": [
+    "Addresses = 2^(32 − prefix).",
+    "/24 = 256 addresses, 254 usable hosts.",
+    "Outside my subnet → default gateway."
+   ],
+   "mistakes": [
+    "Thinking /16 is smaller than /24 (it's 256× larger).",
+    "Overlapping ranges between VPN, VPC and Docker networks.",
+    "Opening a security group to 0.0.0.0/0 when a /24 would do."
+   ],
+   "interview": [
+    "How many hosts fit in a /27?",
+    "What does the default gateway do?"
+   ],
+   "practice": [
+    "Can you use: decide whether 10.1.5.200 is in 10.1.4.0/23?",
+    "Can you build: a VPC plan with public and private /24 subnets?"
+   ],
+   "id": "networking-subnets"
+  },
+  {
+   "title": "Ports, common ports and sockets",
+   "minutes": 12,
+   "summary": "How one machine runs many network services, and the ports you'll meet daily.",
+   "simple": "An IP address finds the machine; a **port** (0–65535) finds the program on it. A server **listens** on a port; a client connects to `IP:port` from a temporary port of its own.",
+   "technical": "A connection is identified by the **5-tuple**: protocol, source IP, source port, destination IP, destination port. That's how one web server on port 443 serves thousands of clients at once: each client uses a different ephemeral source port (typically 32768–60999 on Linux).\n\nRanges: **0–1023** well-known (binding needs root/capabilities on Linux), **1024–49151** registered, **49152–65535** dynamic/ephemeral.\n\nCommon ports:\n- 22 SSH, 25/587 SMTP (submission 587), 53 DNS (UDP/TCP)\n- 80 HTTP, 443 HTTPS (and HTTP/3 on UDP 443)\n- 5432 PostgreSQL, 3306 MySQL, 6379 Redis, 27017 MongoDB\n- 8000/8080 common dev/app servers, 5672 RabbitMQ, 9200 Elasticsearch\n\nOnly one process can listen on a given IP:port (for a protocol). `Address already in use` means something else holds it — find it with `ss -ltnp` (or `lsof -i :8000`).\n\nFirewalls and cloud security groups filter by port: expose 80/443 publicly, SSH only from trusted IPs, databases never publicly.",
+   "analogy": "The IP is an office building's address; ports are the extension numbers. Reception (the OS) routes a call for extension 5432 to the database team's desk. Many callers can talk to extension 443 at once because each has their own phone number (source port).",
+   "example": {
+    "lang": "bash",
+    "code": "$ ss -ltnp\nState  Local Address:Port  Process\nLISTEN 127.0.0.1:5432      users:((\"postgres\",pid=812))\nLISTEN 0.0.0.0:22          users:((\"sshd\",pid=640))\nLISTEN 0.0.0.0:8000        users:((\"gunicorn\",pid=2210))\n\n$ python manage.py runserver 8000\nError: That port is already in use.\n$ lsof -i :8000 -t | xargs kill      # stop whatever holds it (check what it is first!)",
+    "explain": "Postgres listens only on loopback (safe), sshd and gunicorn on all interfaces. The error was a leftover gunicorn holding 8000."
+   },
+   "terms": [
+    [
+     "Port",
+     "16-bit number identifying a service endpoint on a host."
+    ],
+    [
+     "Listening socket",
+     "Server waiting for connections on IP:port."
+    ],
+    [
+     "Ephemeral port",
+     "Temporary client-side port."
+    ],
+    [
+     "5-tuple",
+     "Protocol + source/destination IP and port."
+    ],
+    [
+     "ss -ltnp",
+     "List listening TCP sockets with processes."
+    ]
+   ],
+   "remember": [
+    "IP finds the host; port finds the service.",
+    "Memorize 22, 53, 80, 443, 5432, 6379.",
+    "`ss -ltnp` shows who listens where."
+   ],
+   "mistakes": [
+    "Exposing 5432/6379 to the internet.",
+    "Killing a process holding a port without checking what it is.",
+    "Running dev servers on ports below 1024 as root."
+   ],
+   "interview": [
+    "How can one server handle many clients on port 443?",
+    "What does 'Address already in use' mean and how do you fix it?"
+   ],
+   "practice": [
+    "Can you use: find which process listens on a port?",
+    "Can you explain: why Postgres listening on 127.0.0.1 is safer than 0.0.0.0."
+   ],
+   "id": "networking-ports"
+  },
+  {
+   "title": "TCP vs UDP and basic troubleshooting",
+   "minutes": 16,
+   "summary": "Connection behavior, reliability, ordering and flow control — and a step-by-step network debugging routine.",
+   "simple": "**TCP** gives you a reliable, ordered stream of bytes over a connection. **UDP** sends independent datagrams with no connection, no delivery guarantee and no ordering. Each is the right choice for different jobs.",
+   "technical": "**TCP** (Transmission Control Protocol):\n- **Connection-oriented**: a **three-way handshake** (SYN → SYN-ACK → ACK) sets up state before data; FIN/ACK closes it.\n- **Reliable**: every byte has a sequence number; the receiver ACKs; lost segments are **retransmitted**.\n- **Ordered**: data is delivered to the application in the order sent, even if packets arrive out of order (they're buffered).\n- **Flow control**: the receiver advertises a window so a fast sender can't overwhelm a slow receiver.\n- **Congestion control**: senders slow down when the network is congested (slow start, CUBIC/BBR).\n- Cost: handshake latency, head-of-line blocking (a lost packet stalls everything after it), more overhead.\n- Used by: HTTP/1.1 and HTTP/2, SSH, PostgreSQL, Redis, SMTP — anything where every byte must arrive correctly.\n\n**UDP** (User Datagram Protocol):\n- **Connectionless**: just send a datagram to IP:port.\n- **No delivery, ordering or duplicate protection**; no flow/congestion control built in. Tiny 8-byte header.\n- Each datagram is delivered whole or not at all (message boundaries preserved).\n- Used by: DNS queries, video/voice calls and live streaming (a late packet is useless — better to skip it), online games, DHCP, NTP, and **QUIC/HTTP/3**, which builds its own reliability on top of UDP.\n\nQuick rule: need correctness of every byte → TCP. Need low latency and can tolerate or handle loss yourself → UDP.\n\n**Troubleshooting routine** (bottom-up):\n1. Is the name right? `dig +short api.example.com`\n2. Is the host reachable? `ping` (ICMP may be blocked — not conclusive), `traceroute`/`mtr` to see where it stops.\n3. Is the port open? `nc -zv host 5432` or `curl -v telnet://host:5432`. *Connection refused* = host reachable, nothing listening (or REJECT). *Timeout* = packets dropped: firewall/security group, wrong route, host down.\n4. Is the service listening on the right interface? On the server: `ss -ltnp` (127.0.0.1 vs 0.0.0.0).\n5. Is it the application? `curl -v` and read the server logs.",
+   "analogy": "TCP is a phone call: you dial, the other side answers, you talk in order, and if a sentence is garbled you say \"sorry, repeat that\". UDP is throwing postcards: fast and cheap, but some may get lost or arrive out of order, and nobody tells you.",
+   "example": {
+    "lang": "bash",
+    "code": "$ dig +short db.internal.example.com\n10.0.2.15\n$ nc -zv 10.0.2.15 5432\nnc: connect to 10.0.2.15 port 5432 (tcp) failed: Connection timed out\n# timeout → dropped somewhere: check the security group / firewall\n\n# after allowing 5432 from the app subnet:\n$ nc -zv 10.0.2.15 5432\nnc: connect to 10.0.2.15 port 5432 (tcp) failed: Connection refused\n# refused → host reachable, nothing accepting on that interface\n$ ssh db 'ss -ltn | grep 5432'\nLISTEN 0 244 127.0.0.1:5432        # Postgres only on loopback → set listen_addresses\n\n$ nc -zv 10.0.2.15 5432\nConnection to 10.0.2.15 5432 port [tcp/postgresql] succeeded!",
+    "explain": "Timeout and refused are different problems at different layers. Each step narrowed it down: DNS fine → firewall fixed → listen address fixed."
+   },
+   "terms": [
+    [
+     "Three-way handshake",
+     "SYN, SYN-ACK, ACK to open a TCP connection."
+    ],
+    [
+     "Retransmission",
+     "Resending unacknowledged TCP data."
+    ],
+    [
+     "Flow control",
+     "Receiver window limiting the sender."
+    ],
+    [
+     "Congestion control",
+     "Sender backing off when the network is overloaded."
+    ],
+    [
+     "Datagram",
+     "Independent UDP message."
+    ],
+    [
+     "Refused vs timeout",
+     "Nothing listening vs packets silently dropped."
+    ]
+   ],
+   "remember": [
+    "TCP: connection, reliable, ordered, flow/congestion control.",
+    "UDP: connectionless, best-effort, low overhead, message boundaries.",
+    "Refused = reachable but closed; timeout = filtered or unreachable."
+   ],
+   "mistakes": [
+    "Calling UDP 'useless because unreliable' — QUIC, DNS and VoIP depend on it.",
+    "Treating a failed ping as proof the host is down (ICMP is often blocked).",
+    "Debugging the app before confirming the port is reachable."
+   ],
+   "interview": [
+    "Compare TCP and UDP on connection, reliability, ordering and flow control.",
+    "Why do video calls use UDP?",
+    "How do you tell a firewall problem from a service that isn't running?"
+   ],
+   "practice": [
+    "Can you debug: the app can't reach the database — walk the five steps.",
+    "Can you explain: what happens during a TCP handshake and why it costs latency."
+   ],
+   "id": "networking-tcp-udp"
+  }
+ ]
+}

@@ -1,0 +1,194 @@
+[
+ {
+  "topic": "Kernel vs distro",
+  "lesson": "linux-intro-shell",
+  "difficulty": "easy",
+  "question": "Which statement is accurate?",
+  "options": [
+   "Linux is the kernel; Ubuntu is a distribution built on it",
+   "The terminal and the kernel are the same thing",
+   "Ubuntu is a Linux kernel",
+   "bash is a Linux distribution"
+  ],
+  "correctAnswer": 0,
+  "explanation": "The kernel manages hardware and processes; a distribution packages it with tools and a package manager.",
+  "id": "linux-q01",
+  "module": "linux"
+ },
+ {
+  "topic": "Shell",
+  "lesson": "linux-intro-shell",
+  "difficulty": "medium",
+  "question": "When you type `python3`, how does the shell locate the program?",
+  "options": [
+   "It searches the whole disk",
+   "It asks the kernel",
+   "It searches the directories listed in `PATH`, in order",
+   "It only looks in the current directory"
+  ],
+  "correctAnswer": 2,
+  "explanation": "The shell walks `PATH` left to right and runs the first match. `which python3` shows which one it found.",
+  "id": "linux-q02",
+  "module": "linux"
+ },
+ {
+  "topic": "Navigation",
+  "lesson": "linux-files-navigation",
+  "difficulty": "easy",
+  "question": "Which command renames `a.txt` to `b.txt`?",
+  "options": [
+   "`rename a.txt`",
+   "`mv a.txt b.txt`",
+   "`cp a.txt b.txt`",
+   "`touch b.txt`"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Moving within the same directory is renaming. `cp` would leave the original behind.",
+  "id": "linux-q03",
+  "module": "linux"
+ },
+ {
+  "topic": "Navigation",
+  "lesson": "linux-files-navigation",
+  "difficulty": "medium",
+  "question": "You are in `/home/alice/projects/api`. What does `cd ../../docs` resolve to?",
+  "options": [
+   "/home/alice/docs",
+   "/home/alice/projects/docs",
+   "/home/docs",
+   "/docs"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Each `..` goes up one level: api → projects → alice, then into docs.",
+  "id": "linux-q04",
+  "module": "linux"
+ },
+ {
+  "topic": "Searching",
+  "lesson": "linux-view-search",
+  "difficulty": "easy",
+  "question": "Which command follows a log file and prints new lines as they arrive?",
+  "options": [
+   "`less app.log`",
+   "`grep -f app.log`",
+   "`tail -f app.log`",
+   "`cat -f app.log`"
+  ],
+  "correctAnswer": 2,
+  "explanation": "`tail -f` keeps the file open and streams appended lines.",
+  "id": "linux-q05",
+  "module": "linux"
+ },
+ {
+  "topic": "Searching",
+  "lesson": "linux-view-search",
+  "difficulty": "medium",
+  "question": "You need every `.py` file under `src` that contains the word `TODO`, with line numbers. Best option?",
+  "options": [
+   "`grep -rn TODO src --include='*.py'`",
+   "`find src -name TODO`",
+   "`ls -R src | grep TODO`",
+   "`cat src/*.py | less`"
+  ],
+  "correctAnswer": 0,
+  "explanation": "grep searches contents; `-r` recurses, `-n` adds line numbers, `--include` filters file names. `find -name` matches file names, not contents.",
+  "id": "linux-q06",
+  "module": "linux"
+ },
+ {
+  "topic": "Permissions",
+  "lesson": "linux-permissions",
+  "difficulty": "medium",
+  "question": "What does `chmod 640 secrets.env` grant?",
+  "options": [
+   "Owner rwx, group r, others r",
+   "Everyone read-only",
+   "Owner r, group rw, others nothing",
+   "Owner rw, group r, others nothing"
+  ],
+  "correctAnswer": 3,
+  "explanation": "6 = 4+2 = rw, 4 = r, 0 = nothing.",
+  "id": "linux-q07",
+  "module": "linux"
+ },
+ {
+  "topic": "Permissions",
+  "lesson": "linux-permissions",
+  "difficulty": "hard",
+  "question": "A user can `cat /data/report.txt` when given the full path, but `ls /data` fails with Permission denied. Which permission set on `/data` explains this?",
+  "options": [
+   "r-x",
+   "--x",
+   "r--",
+   "rw-"
+  ],
+  "correctAnswer": 1,
+  "explanation": "On a directory, `x` allows accessing entries by name; `r` allows listing them. With only `x` you can open a known file but not list the directory.",
+  "id": "linux-q08",
+  "module": "linux"
+ },
+ {
+  "topic": "Processes",
+  "lesson": "linux-processes-packages",
+  "difficulty": "medium",
+  "question": "A worker process ignores Ctrl+C. What's the recommended order of attempts?",
+  "options": [
+   "`kill -9` immediately",
+   "`kill PID` (SIGTERM), then `kill -9 PID` only if it still won't stop",
+   "Reboot the machine",
+   "`rm` the program file"
+  ],
+  "correctAnswer": 1,
+  "explanation": "SIGTERM lets the program clean up (flush, close connections). SIGKILL can't be caught and skips cleanup.",
+  "id": "linux-q09",
+  "module": "linux"
+ },
+ {
+  "topic": "Redirection",
+  "lesson": "linux-pipes-env",
+  "difficulty": "hard",
+  "question": "Which command writes both normal output and errors of `./build.sh` to `build.log`?",
+  "options": [
+   "`./build.sh > build.log 2>&1`",
+   "`./build.sh | build.log`",
+   "`./build.sh 2>&1 > build.log`",
+   "`./build.sh 2> build.log`"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Redirections apply left to right: stdout goes to the file first, then stderr is pointed at where stdout now goes. The reverse order sends stderr to the terminal.",
+  "id": "linux-q10",
+  "module": "linux"
+ },
+ {
+  "topic": "Environment",
+  "lesson": "linux-pipes-env",
+  "difficulty": "medium",
+  "question": "You run `API_KEY=abc` (no export) then `python app.py`, which reads `os.environ['API_KEY']`. What happens?",
+  "options": [
+   "The shell exports all variables automatically",
+   "KeyError: the variable isn't exported to the child process",
+   "Python reads ~/.bashrc and finds it",
+   "It prints abc"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Unexported shell variables are not passed to child processes. Use `export API_KEY=abc` or `API_KEY=abc python app.py`.",
+  "id": "linux-q11",
+  "module": "linux"
+ },
+ {
+  "topic": "Pipes",
+  "lesson": "linux-pipes-env",
+  "difficulty": "easy",
+  "question": "What does the `|` operator do?",
+  "options": [
+   "Runs the right command only if the left fails",
+   "Runs two commands in parallel with no connection",
+   "Writes output to a file",
+   "Sends the stdout of the left command to the stdin of the right command"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Pipes connect stdout → stdin. `||` is the 'run if failed' operator.",
+  "id": "linux-q12",
+  "module": "linux"
+ }
+]

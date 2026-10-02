@@ -1,0 +1,178 @@
+[
+ {
+  "topic": "Concepts",
+  "lesson": "docker-images-containers",
+  "difficulty": "easy",
+  "question": "What is the relationship between an image and a container?",
+  "options": [
+   "An image is a running container",
+   "They are the same",
+   "Images run on VMs, containers on hosts",
+   "A container is a running instance of an image"
+  ],
+  "correctAnswer": 3,
+  "explanation": "One image can start many containers, each with its own writable layer.",
+  "id": "docker-q01",
+  "module": "docker"
+ },
+ {
+  "topic": "Containers vs VMs",
+  "lesson": "docker-images-containers",
+  "difficulty": "medium",
+  "question": "Why do containers start much faster than virtual machines?",
+  "options": [
+   "They share the host kernel and isolate processes with namespaces/cgroups instead of booting a guest OS",
+   "They don't have filesystems",
+   "They use faster disks",
+   "They are compiled to machine code"
+  ],
+  "correctAnswer": 0,
+  "explanation": "No kernel boot, just a process start with isolation.",
+  "id": "docker-q02",
+  "module": "docker"
+ },
+ {
+  "topic": "Data",
+  "lesson": "docker-images-containers",
+  "difficulty": "medium",
+  "question": "You run Postgres without a volume, then `docker rm` the container. What happens to the data?",
+  "options": [
+   "It moves to the host automatically",
+   "It is lost with the container's writable layer",
+   "Docker backs it up",
+   "It is kept in the image"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Use a named volume for anything that must persist.",
+  "id": "docker-q03",
+  "module": "docker"
+ },
+ {
+  "topic": "Caching",
+  "lesson": "docker-dockerfile",
+  "difficulty": "hard",
+  "question": "Your image reinstalls all pip packages on every code change. What's the likely Dockerfile problem?",
+  "options": [
+   "Using CMD instead of ENTRYPOINT",
+   "`COPY . .` comes before `RUN pip install -r requirements.txt`",
+   "Using python:3.12-slim",
+   "Missing EXPOSE"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Copying all source invalidates the cache for every later layer. Copy requirements.txt first, install, then copy the code.",
+  "id": "docker-q04",
+  "module": "docker"
+ },
+ {
+  "topic": "Ports",
+  "lesson": "docker-dockerfile",
+  "difficulty": "hard",
+  "question": "The container is running with `-p 8000:8000`, but `curl localhost:8000` from the host is refused. Most likely?",
+  "options": [
+   "EXPOSE is missing",
+   "The server inside binds to 127.0.0.1 instead of 0.0.0.0",
+   "Docker doesn't support port 8000",
+   "The image is too large"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Loopback inside the container isn't reachable via the published port.",
+  "id": "docker-q05",
+  "module": "docker"
+ },
+ {
+  "topic": "EXPOSE",
+  "lesson": "docker-dockerfile",
+  "difficulty": "medium",
+  "question": "What does `EXPOSE 8000` in a Dockerfile do?",
+  "options": [
+   "Documents that the container listens on 8000; publishing still needs -p",
+   "Publishes port 8000 on the host",
+   "Starts a server",
+   "Opens the firewall"
+  ],
+  "correctAnswer": 0,
+  "explanation": "It's metadata. `-p` (or Compose `ports`) actually publishes.",
+  "id": "docker-q06",
+  "module": "docker"
+ },
+ {
+  "topic": "Networking",
+  "lesson": "docker-volumes-networks",
+  "difficulty": "medium",
+  "question": "Inside a Django container, `DB_HOST=localhost` fails to reach the Postgres container. Why?",
+  "options": [
+   "Docker blocks all DB traffic",
+   "The port must be 80",
+   "localhost inside a container refers to that container itself; use the db container/service name on a shared network",
+   "Postgres doesn't accept localhost"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Containers on the same user-defined network resolve each other by name.",
+  "id": "docker-q07",
+  "module": "docker"
+ },
+ {
+  "topic": "Storage",
+  "lesson": "docker-volumes-networks",
+  "difficulty": "easy",
+  "question": "Which is best for PostgreSQL data in a container?",
+  "options": [
+   "The container's writable layer",
+   "A named volume",
+   "A tmpfs mount",
+   "An environment variable"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Named volumes persist and are managed by Docker.",
+  "id": "docker-q08",
+  "module": "docker"
+ },
+ {
+  "topic": "Compose",
+  "lesson": "docker-compose",
+  "difficulty": "hard",
+  "question": "`depends_on: [db]` is set, but web still crashes with 'connection refused' on startup. Why?",
+  "options": [
+   "depends_on is ignored",
+   "depends_on only waits for the db container to start, not for Postgres to accept connections; add a healthcheck with condition: service_healthy",
+   "The ports are wrong",
+   "Compose starts services alphabetically"
+  ],
+  "correctAnswer": 1,
+  "explanation": "Database initialization takes seconds after the container starts.",
+  "id": "docker-q09",
+  "module": "docker"
+ },
+ {
+  "topic": "Compose",
+  "lesson": "docker-compose",
+  "difficulty": "medium",
+  "question": "What does `docker compose down -v` do that `docker compose down` doesn't?",
+  "options": [
+   "Keeps containers running",
+   "Shows verbose logs",
+   "Rebuilds images",
+   "Also deletes named volumes, including database data"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Use -v only when you want a clean database.",
+  "id": "docker-q10",
+  "module": "docker"
+ },
+ {
+  "topic": "Compose",
+  "lesson": "docker-compose",
+  "difficulty": "easy",
+  "question": "In Compose, how does the web service reach Redis defined as service `redis`?",
+  "options": [
+   "redis://redis:6379",
+   "Through the host's public IP",
+   "redis://localhost:6379",
+   "redis://127.0.0.1:6379"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Compose's project network provides DNS by service name.",
+  "id": "docker-q11",
+  "module": "docker"
+ }
+]

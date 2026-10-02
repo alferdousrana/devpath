@@ -1,0 +1,210 @@
+[
+ {
+  "topic": "Request flow",
+  "lesson": "django-architecture",
+  "difficulty": "medium",
+  "question": "In what order does Django handle a request?",
+  "options": [
+   "Template → model → view",
+   "View → URL resolver → middleware",
+   "URL resolver → database → middleware",
+   "Middleware → URL resolver → view → middleware (response)"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Middleware wraps the whole cycle; URL resolution picks the view; middleware processes the response on the way out.",
+  "id": "django-q01",
+  "module": "django"
+ },
+ {
+  "topic": "Project vs app",
+  "lesson": "django-architecture",
+  "difficulty": "easy",
+  "question": "You created an app but its models aren't picked up by makemigrations. Most likely?",
+  "options": [
+   "Missing `urls.py`",
+   "You need to restart PostgreSQL",
+   "Models must be in views.py",
+   "The app isn't listed in INSTALLED_APPS"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Django only discovers models of installed apps.",
+  "id": "django-q02",
+  "module": "django"
+ },
+ {
+  "topic": "ORM",
+  "lesson": "django-models-orm",
+  "difficulty": "medium",
+  "question": "When does this line hit the database? `qs = Order.objects.filter(status='paid')`",
+  "options": [
+   "When the server starts",
+   "Immediately",
+   "Only when the QuerySet is evaluated (iterated, sliced, list(), len())",
+   "Never; QuerySets are cached"
+  ],
+  "correctAnswer": 2,
+  "explanation": "QuerySets are lazy, so you can chain filters cheaply before one SQL query runs.",
+  "id": "django-q03",
+  "module": "django"
+ },
+ {
+  "topic": "N+1",
+  "lesson": "django-models-orm",
+  "difficulty": "hard",
+  "question": "A list endpoint serializes 50 orders and each accesses `order.customer.name`. Logs show 51 queries. Best fix?",
+  "options": [
+   "`Order.objects.select_related('customer')`",
+   "Add an index on name",
+   "`prefetch_related('customer__name')`",
+   "Cache the view for 1 hour"
+  ],
+  "correctAnswer": 0,
+  "explanation": "select_related does a SQL JOIN for ForeignKey relations, loading customers in the same query.",
+  "id": "django-q04",
+  "module": "django"
+ },
+ {
+  "topic": "Migrations",
+  "lesson": "django-models-orm",
+  "difficulty": "medium",
+  "question": "What is the correct workflow after adding a field to a model?",
+  "options": [
+   "Delete old migrations and regenerate",
+   "`migrate` only",
+   "`makemigrations`, review the file, `migrate`, commit the migration",
+   "Edit the database by hand"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Migration files are code: reviewed and committed so every environment gets the same schema.",
+  "id": "django-q05",
+  "module": "django"
+ },
+ {
+  "topic": "Auth",
+  "lesson": "django-auth-permissions",
+  "difficulty": "easy",
+  "question": "Authorization answers which question?",
+  "options": [
+   "Which server handled the request?",
+   "Is the password strong?",
+   "Who are you?",
+   "What are you allowed to do?"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Authentication = identity; authorization = permitted actions.",
+  "id": "django-q06",
+  "module": "django"
+ },
+ {
+  "topic": "Passwords",
+  "lesson": "django-auth-permissions",
+  "difficulty": "medium",
+  "question": "How does Django store user passwords by default?",
+  "options": [
+   "Salted, iterated one-way hash (PBKDF2)",
+   "Plain text",
+   "Reversible encryption",
+   "Base64"
+  ],
+  "correctAnswer": 0,
+  "explanation": "Hashes can't be reversed; Django verifies by hashing the login attempt the same way.",
+  "id": "django-q07",
+  "module": "django"
+ },
+ {
+  "topic": "Serializers",
+  "lesson": "django-drf-serializers",
+  "difficulty": "hard",
+  "question": "Why is `fields = '__all__'` risky on a public write endpoint?",
+  "options": [
+   "It disables validation",
+   "Clients may read internal fields and set fields like `owner` or `is_staff` (mass assignment)",
+   "It's slower",
+   "It breaks pagination"
+  ],
+  "correctAnswer": 1,
+  "explanation": "List fields explicitly and mark server-controlled ones read-only.",
+  "id": "django-q08",
+  "module": "django"
+ },
+ {
+  "topic": "Validation",
+  "lesson": "django-drf-serializers",
+  "difficulty": "medium",
+  "question": "Where do you put a rule comparing two fields (end date after start date)?",
+  "options": [
+   "The model's `__str__`",
+   "`validate_start`",
+   "`validate(self, attrs)`",
+   "The URLconf"
+  ],
+  "correctAnswer": 2,
+  "explanation": "Object-level `validate()` receives all field values after field-level validation.",
+  "id": "django-q09",
+  "module": "django"
+ },
+ {
+  "topic": "ViewSets",
+  "lesson": "django-views-routers",
+  "difficulty": "medium",
+  "question": "Users can see other users' orders through a ModelViewSet. What's the fix?",
+  "options": [
+   "Add pagination",
+   "Override `get_queryset()` to filter by `self.request.user`",
+   "Hide the IDs in the frontend",
+   "Use POST instead of GET"
+  ],
+  "correctAnswer": 1,
+  "explanation": "get_queryset is used by list, retrieve, update and destroy, so one change protects all actions.",
+  "id": "django-q10",
+  "module": "django"
+ },
+ {
+  "topic": "Routers",
+  "lesson": "django-views-routers",
+  "difficulty": "easy",
+  "question": "What does a DRF router do?",
+  "options": [
+   "Generates URL patterns for ViewSet actions",
+   "Balances load between servers",
+   "Routes database queries",
+   "Encrypts requests"
+  ],
+  "correctAnswer": 0,
+  "explanation": "`router.register('orders', OrderViewSet)` yields list and detail URLs.",
+  "id": "django-q11",
+  "module": "django"
+ },
+ {
+  "topic": "JWT",
+  "lesson": "django-api-features",
+  "difficulty": "hard",
+  "question": "Which statement about JWT access tokens is true?",
+  "options": [
+   "They must be checked against a session table on every request",
+   "They never expire",
+   "The payload is encrypted, so secrets are safe in it",
+   "The payload is base64-encoded and signed; anyone can read it but can't modify it without invalidating the signature"
+  ],
+  "correctAnswer": 3,
+  "explanation": "Signed, not encrypted. Keep them short-lived and free of sensitive data.",
+  "id": "django-q12",
+  "module": "django"
+ },
+ {
+  "topic": "Throttling",
+  "lesson": "django-api-features",
+  "difficulty": "easy",
+  "question": "Which status code does DRF return when a client exceeds its rate limit?",
+  "options": [
+   "503",
+   "403",
+   "429",
+   "404"
+  ],
+  "correctAnswer": 2,
+  "explanation": "429 Too Many Requests, usually with a Retry-After header.",
+  "id": "django-q13",
+  "module": "django"
+ }
+]
